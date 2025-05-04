@@ -1,24 +1,208 @@
-import React from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/types';
+import CustomButton from '../components/CustomButton';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = () => {
+    console.log('Email:', email);
+    console.log('Password:', password);
+  };
+
+  const handleForgotPassword = () => {
+    navigation.navigate('ForgotPassword');
+  };
+
+  const handleSignUp = () => {
+    navigation.navigate('Register');
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Đăng nhập</Text>
-      {/* Đây có thể là nơi bạn đặt TextInput cho email/password sau này */}
-      <Button title="Đăng nhập" onPress={() => console.log('Login')} />
-      <Button title="Chưa có tài khoản? Đăng ký" onPress={() => navigation.navigate('Register')} />
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.container}>
+              <Text style={styles.title}>Welcome Back 👋</Text>
+              <Text style={styles.description}>Sign in to your account</Text>
+
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                placeholder="Enter your email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={styles.input}
+              />
+
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                style={styles.input}
+              />
+
+              <TouchableOpacity style={styles.forgotWrapper} onPress={handleForgotPassword}>
+                <Text style={styles.forgotText}>Forgot Password?</Text>
+              </TouchableOpacity>
+
+              <View style={styles.buttonWrapper}>
+                <CustomButton title="SIGN IN" onPress={handleLogin} />
+              </View>
+
+              <View style={styles.signupWrapper}>
+                <Text style={styles.signupText}>
+                  Don’t have an account?{' '}
+                  <Text style={styles.signupLink} onPress={handleSignUp}>
+                    Sign Up
+                  </Text>
+                </Text>
+              </View>
+
+              <View style={styles.dividerWrapper}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>Or with</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity
+                style={styles.googleButton}
+                onPress={() => console.log('Google Sign-In')}
+              >
+                <FontAwesome name="google" size={20} color="#d42a1b" style={styles.googleIcon} />
+                <Text style={styles.googleText}>Continue with Google</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 export default LoginScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 },
-  title: { fontSize: 24, marginBottom: 20 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: 'white',
+  },
+  container: {
+    width: '100%',
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 10,
+    fontWeight: '500',
+  },
+  description: {
+    fontSize: 16,
+    marginTop: 10,
+    marginBottom: 30,
+    color: '#a6a6a6',
+  },
+  label: {
+    fontSize: 14,
+    color: 'black',
+    marginBottom: 6,
+    marginTop: 10,
+    fontWeight: '600',
+  },
+  input: {
+    width: '100%',
+    height: 48,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+    marginBottom: 10,
+  },
+  forgotWrapper: {
+    alignItems: 'flex-end',
+    marginBottom: 20,
+  },
+  forgotText: {
+    color: '#d42a1b',
+    fontWeight: 'bold',
+  },
+  buttonWrapper: {
+    width: '100%',
+    marginTop: 8,
+  },
+  signupWrapper: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  signupText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  signupLink: {
+    color: '#d42a1b',
+    fontWeight: 'bold',
+  },
+  dividerWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ccc',
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    color: '#999',
+    fontSize: 14,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginTop: 16,
+  },
+  googleIcon: {
+    marginRight: 8,
+  },
+  googleText: {
+    fontSize: 16,
+    color: '#000',
+  },
 });

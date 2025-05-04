@@ -45,7 +45,8 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     marginTop: 10,
     marginBottom:60,
-    textAlign: 'center',  // Đảm bảo văn bản được căn giữa
+    textAlign: 'center', 
+    color:"#a6a6a6" // Đảm bảo văn bản được căn giữa
   },
   buttonStyle: {
     marginTop: 0, 
