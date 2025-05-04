@@ -7,6 +7,7 @@ import RegisterScreen from '../screens/RegisterScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import EnterCodeScreen from '../screens/EnterCodeScreen';
 import SetNewPasswordScreen from '../screens/SetNewPasswordScreen';
+import BottomTabsNavigator from './BottomTabsNavigator';  // Đảm bảo import BottomTabsNavigator
 import { AuthStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -21,6 +22,9 @@ export default function AuthStackNavigator() {
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="EnterCode" component={EnterCodeScreen} />
       <Stack.Screen name="SetNewPassword" component={SetNewPasswordScreen} />
+      
+      {/* Chỉnh sửa ở đây để truyền BottomTabsNavigator vào component */}
+      <Stack.Screen name="HomeTabs" component={BottomTabsNavigator} /> 
     </Stack.Navigator>
   );
 }

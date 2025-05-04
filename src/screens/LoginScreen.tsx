@@ -24,10 +24,14 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
+    // Kiểm tra đăng nhập (giả sử email và password hợp lệ)
     console.log('Email:', email);
     console.log('Password:', password);
+    
+    // Điều hướng đến BottomTabsNavigator sau khi đăng nhập thành công
+    navigation.replace('HomeTabs'); // Replace màn hình Login với BottomTabsNavigator
   };
-
+  
   const handleForgotPassword = () => {
     navigation.navigate('ForgotPassword');
   };
