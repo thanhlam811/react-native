@@ -8,4 +8,3 @@ export type AuthStackParamList = {
     SetNewPassword: undefined;  // Màn hình đặt lại mật khẩu mới
     HomeTabs: undefined;
   };
-  
