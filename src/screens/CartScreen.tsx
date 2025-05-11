@@ -12,6 +12,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { RectButton } from 'react-native-gesture-handler';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { CartStackParamList } from '../navigation/types';
 
 const initialData = [
   {
@@ -43,9 +46,14 @@ const initialData = [
   },
 ];
 
+type CartNavigationProp = NativeStackNavigationProp<CartStackParamList, 'CartScreen'>;
+
 const CartScreen = () => {
   const [cartItems, setCartItems] = useState(initialData);
-
+ const navigation = useNavigation<CartNavigationProp>();
+   const goToPayment = () => {
+    navigation.navigate('PaymentScreen');
+  };
   const updateQuantity = (id: string, type: 'inc' | 'dec') => {
     setCartItems((prev) =>
       prev.map((item) =>
@@ -167,7 +175,7 @@ const CartScreen = () => {
         Total: <Text style={styles.totalAmount}>${total}</Text>
       </Text>
 
-        <TouchableOpacity style={styles.payButton}>
+      <TouchableOpacity style={styles.payButton} onPress={goToPayment}>
           <Text style={styles.payText}>PAY</Text>
         </TouchableOpacity>
       </View>

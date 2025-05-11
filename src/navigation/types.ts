@@ -8,3 +8,8 @@ export type AuthStackParamList = {
     SetNewPassword: undefined;  // Màn hình đặt lại mật khẩu mới
     HomeTabs: undefined;
   };
+
+export type CartStackParamList = {
+  CartScreen: undefined;
+  PaymentScreen: undefined;
+};
