@@ -5,6 +5,8 @@ import EditProfile from '../screens/EditProfileScreen';
 import Setting from '../screens/SettingScreen';
 import Contact from '../screens/ContactScreen';
 import Payment from '../screens/PaymentScreen';
+import Notification from '../screens/NotificationScreen';
+import Filter from '../screens/FilterScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -21,7 +23,9 @@ export default function RootNavigator() {
       <Stack.Screen name="Setting" component={Setting} />
       <Stack.Screen name="Contact" component={Contact} />
       <Stack.Screen name="Payment" component={Payment} />
- 
+      <Stack.Screen name="Notification" component={Notification} />
+      <Stack.Screen name="Filter" component={Filter} />
+
     </Stack.Navigator>
   );
 }
