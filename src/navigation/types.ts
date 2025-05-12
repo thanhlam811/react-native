@@ -9,7 +9,3 @@ export type AuthStackParamList = {
     HomeTabs: undefined;
   };
 
-export type CartStackParamList = {
-  CartScreen: undefined;
-  PaymentScreen: undefined;
-};

@@ -14,7 +14,6 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { RectButton } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { CartStackParamList } from '../navigation/types';
 
 const initialData = [
   {
@@ -46,13 +45,13 @@ const initialData = [
   },
 ];
 
-type CartNavigationProp = NativeStackNavigationProp<CartStackParamList, 'CartScreen'>;
 
 const CartScreen = () => {
   const [cartItems, setCartItems] = useState(initialData);
- const navigation = useNavigation<CartNavigationProp>();
+    const navigation = useNavigation<any>();
+  
    const goToPayment = () => {
-    navigation.navigate('PaymentScreen');
+    navigation.navigate('Payment');
   };
   const updateQuantity = (id: string, type: 'inc' | 'dec') => {
     setCartItems((prev) =>

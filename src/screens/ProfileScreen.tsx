@@ -1,9 +1,36 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useNavigation } from '@react-navigation/native';
 
 const ProfileScreen = () => {
+  const navigation = useNavigation<any>();
+
+  const handleNavigate = (label: string) => {
+    switch (label) {
+      case 'Edit Profile':
+        navigation.navigate('EditProfile');
+        break;
+      case 'Setting':
+        navigation.navigate('Setting');
+        break;
+      case 'Contact':
+        navigation.navigate('Contact');
+        break;
+      case 'Log Out':
+        // Thêm chức năng đăng xuất nếu cần
+        alert('Logged out!');
+        break;
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Avatar và Tên */}
@@ -38,9 +65,18 @@ const ProfileScreen = () => {
           { label: 'Contact', icon: 'support-agent' },
           { label: 'Log Out', icon: 'logout' },
         ].map((item, index) => (
-          <TouchableOpacity key={index} style={styles.menuItem}>
+          <TouchableOpacity
+            key={index}
+            style={styles.menuItem}
+            onPress={() => handleNavigate(item.label)}
+          >
             <View style={styles.menuLeft}>
-              <Icon name={item.icon} size={22} color="#444" style={styles.menuIcon} />
+              <Icon
+                name={item.icon}
+                size={22}
+                color="#444"
+                style={styles.menuIcon}
+              />
               <Text style={styles.menuText}>{item.label}</Text>
             </View>
             <Icon name="keyboard-arrow-right" size={24} color="#888" />

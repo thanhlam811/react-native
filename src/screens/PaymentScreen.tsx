@@ -69,21 +69,14 @@ const PaymentScreen = () => {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-    <FlatList
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom']}>
+      <FlatList
       data={cartItems} // Use cartItems state instead of selectedItems
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
       ListHeaderComponent={
         <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Icon name="arrow-back" size={24} color="#000" />
-            </TouchableOpacity>
-            <Text style={styles.title}>Payment</Text>
-            <View style={{ width: 24 }} />
-          </View>
+         
 
           {/* Delivery address */}
           <Text style={styles.sectionTitle}>Delivery address</Text>
@@ -159,18 +152,9 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
+
   sectionTitle: {
-    marginTop: 20,
+    marginTop: 0,
     marginBottom: 8,
     fontWeight: 'bold',
     fontSize: 16,

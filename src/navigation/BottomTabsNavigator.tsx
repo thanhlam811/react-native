@@ -2,11 +2,10 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
 import WishlistScreen from '../screens/WishlistScreen';
-// import CartScreen from '../screens/CartScreen';
+import CartScreen from '../screens/CartScreen';
 
 import ProfileScreen from '../screens/ProfileScreen';
 import { Ionicons } from '@expo/vector-icons';
-import CartStack from './CartStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -29,7 +28,7 @@ export default function BottomTabsNavigator() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Wishlist" component={WishlistScreen} />
-      <Tab.Screen name="Cart" component={CartStack} />
+      <Tab.Screen name="Cart" component={CartScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
