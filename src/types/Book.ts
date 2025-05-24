@@ -6,5 +6,6 @@ export interface Book {
     description: string;
     listPrice: number;
     sellingPrice: number;
+    
   }
   

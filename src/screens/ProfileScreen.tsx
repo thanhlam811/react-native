@@ -26,8 +26,8 @@ const ProfileScreen = () => {
         break;
       case 'Log Out':
         // Thêm chức năng đăng xuất nếu cần
-        alert('Logged out!');
-        break;
+        navigation.navigate('Auth');
+             break;
     }
   };
 
