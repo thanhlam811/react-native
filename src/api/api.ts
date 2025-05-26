@@ -10,6 +10,18 @@ const api = axios.create({
   },
 });
 
+const BASE_URL_1 = 'http://10.0.2.2:8080/';
+
+const api1 = axios.create({
+  baseURL: BASE_URL_1,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+
+
+
 // Helper xử lý response có cấu trúc lồng
 const extractData = (res: any) => res.data?.data?.data || [];
 
@@ -60,4 +72,27 @@ export const genreApi = {
   create: async (data: any) => (await api.post(`/genres`, data)).data,
   update: async (data: any) => (await api.put(`/genres`, data)).data,
   delete: async (id: number) => (await api.delete(`/genres/${id}`)).data,
+};
+
+export const authApi = {
+  login: async (username: string, password: string) => {
+    try {
+      const response = await api1.post('/auth/sign-in', { username, password });
+      return response.data.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+  logout: async () => {
+    return api1.post('/sign-out');
+  },
+  register: async (name: string, email: string, password: string,  roleId: number) => {
+  try {
+    const response = await api1.post('/auth/register', { name, email, password,roleId });
+    return response.data.data;
+  } catch (error) {
+    throw error;
+  }
+},
+
 };

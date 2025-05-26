@@ -10,28 +10,41 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/types';
 import CustomButton from '../components/CustomButton';
+import { authApi } from '../api/api';  
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    // Kiểm tra đăng nhập (giả sử email và password hợp lệ)
-    console.log('Email:', email);
-    console.log('Password:', password);
-    
-    // Điều hướng đến BottomTabsNavigator sau khi đăng nhập thành công
-    navigation.replace('HomeTabs'); // Replace màn hình Login với BottomTabsNavigator
+  const handleLogin = async () => {
+    if (!username.trim() || !password.trim()) {
+      Alert.alert('Validation Error', 'Username and password cannot be blank');
+      return;
+    }
+
+    try {
+      const userData = await authApi.login(username, password);
+      console.log('Login success:', userData);
+
+      // TODO: Lưu token hoặc user info (nếu cần)
+
+      navigation.replace('HomeTabs');
+    } catch (error: any) {
+      console.error('Login failed:', error.response?.data?.message || error.message);
+
+      Alert.alert('Login Failed', error.response?.data?.message || 'Email or password is incorrect');
+    }
   };
-  
+
   const handleForgotPassword = () => {
     navigation.navigate('ForgotPassword');
   };
@@ -52,12 +65,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.title}>Welcome Back 👋</Text>
               <Text style={styles.description}>Sign in to your account</Text>
 
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>Username</Text>
               <TextInput
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                placeholder="Enter your username"
+                value={username}
+                onChangeText={setUsername}
                 autoCapitalize="none"
                 style={styles.input}
               />

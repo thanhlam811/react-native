@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';  // Import SafeAr
 import CustomButton from '../components/CustomButton'; // If you have the CustomButton component
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/types';
-
+import { authApi } from '../api/api';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
 const RegisterScreen: React.FC<Props> = ({ navigation }) => {
@@ -24,11 +24,17 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
+  const [roleId, setRole] = useState(1);
 
-  const handleRegister = () => {
-    console.log('Name:', name);
-    console.log('Email:', email);
-    console.log('Password:', password);
+  const handleRegister = async () => {
+    try {
+      const res = await authApi.register(name, email, password, roleId);
+      console.log('Register success:', res);
+      navigation.navigate('Login'); // hoặc chuyển hướng sau khi đăng ký thành công
+    } catch (error: any) {
+      console.error('Register failed:', error?.response?.data?.message || error.message);
+      alert('Register failed: ' + (error?.response?.data?.message || 'Unknown error'));
+    }
   };
 
   const togglePasswordVisibility = () => {

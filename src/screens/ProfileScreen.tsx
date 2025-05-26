@@ -5,13 +5,38 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 
+// Giả sử bạn có api logout
+import { authApi } from '../api/api'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const ProfileScreen = () => {
   const navigation = useNavigation<any>();
+
+  const handleLogout = async () => {
+    try {
+
+      // 1. Gọi API logout nếu có
+      await authApi.logout();
+
+      // 2. Xóa token hoặc dữ liệu lưu trong máy
+      await AsyncStorage.removeItem('userToken');
+
+      // 3. Điều hướng về màn hình Auth (login)
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Auth' }],
+      });
+    } catch (error) {
+      Alert.alert('Logout Failed', 'Please try again later.');
+      console.error('Logout error:', error);
+    }
+  };
 
   const handleNavigate = (label: string) => {
     switch (label) {
@@ -25,9 +50,9 @@ const ProfileScreen = () => {
         navigation.navigate('Contact');
         break;
       case 'Log Out':
-        // Thêm chức năng đăng xuất nếu cần
-        navigation.navigate('Auth');
-             break;
+        handleLogout();
+         navigation.navigate('Auth');
+        break;
     }
   };
 
@@ -42,7 +67,7 @@ const ProfileScreen = () => {
         <Text style={styles.username}>John Doe</Text>
       </View>
 
-       <View style={styles.statusRow}>
+      <View style={styles.statusRow}>
         {[
           { label: 'To Confirm', icon: 'access-time', tabIndex: 0 },
           { label: 'To Ship', icon: 'local-shipping', tabIndex: 1 },
@@ -52,14 +77,15 @@ const ProfileScreen = () => {
           <TouchableOpacity
             key={index}
             style={styles.statusItem}
-            onPress={() => navigation.navigate('MyOrders', { tabIndex: item.tabIndex })}
+            onPress={() =>
+              navigation.navigate('MyOrders', { tabIndex: item.tabIndex })
+            }
           >
             <Icon name={item.icon} size={28} color="#333" />
             <Text style={styles.statusLabel}>{item.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
-
 
       {/* 4 mục dọc có icon trái và mũi tên phải */}
       <View style={styles.menu}>
