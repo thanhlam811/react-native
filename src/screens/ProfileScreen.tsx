@@ -42,20 +42,24 @@ const ProfileScreen = () => {
         <Text style={styles.username}>John Doe</Text>
       </View>
 
-      {/* 4 mục hàng ngang */}
-      <View style={styles.statusRow}>
+       <View style={styles.statusRow}>
         {[
-          { label: 'To Confirm', icon: 'access-time' },
-          { label: 'To Ship', icon: 'local-shipping' },
-          { label: 'To Receive', icon: 'inventory' },
-          { label: 'Rating', icon: 'star-rate' },
+          { label: 'To Confirm', icon: 'access-time', tabIndex: 0 },
+          { label: 'To Ship', icon: 'local-shipping', tabIndex: 1 },
+          { label: 'To Receive', icon: 'inventory', tabIndex: 2 },
+          { label: 'Rating', icon: 'star-rate', tabIndex: 3 },
         ].map((item, index) => (
-          <View key={index} style={styles.statusItem}>
+          <TouchableOpacity
+            key={index}
+            style={styles.statusItem}
+            onPress={() => navigation.navigate('MyOrders', { tabIndex: item.tabIndex })}
+          >
             <Icon name={item.icon} size={28} color="#333" />
             <Text style={styles.statusLabel}>{item.label}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
+
 
       {/* 4 mục dọc có icon trái và mũi tên phải */}
       <View style={styles.menu}>

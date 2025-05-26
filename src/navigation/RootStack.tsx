@@ -8,6 +8,7 @@ import Payment from '../screens/PaymentScreen';
 import Notification from '../screens/NotificationScreen';
 import Filter from '../screens/FilterScreen';
 import BookDetail from '../screens/BookDetailScreen';
+import MyOrders from '../screens/MyOrderScreen';
 import Search from '../screens/SearchScreen';
 import AuthStackNavigator from './AuthStackNavigator';
 // import MyOrder from '../screens/MyOrderScreen';
@@ -24,8 +25,8 @@ export default function RootNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen name="BookDetail" component={BookDetail} />
-      {/* <Stack.Screen name="MyOrder" component={MyOrder} /> */}
-
+      
+      <Stack.Screen name="MyOrders" component={MyOrders} />
       <Stack.Screen name="EditProfile" component={EditProfile} />
       <Stack.Screen name="Setting" component={Setting} />
       <Stack.Screen name="Contact" component={Contact} />
