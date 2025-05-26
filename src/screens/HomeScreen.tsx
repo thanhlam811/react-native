@@ -42,7 +42,7 @@
         style={styles.bookCard}
       >
         <Image
-          source={{ uri: `http://10.0.2.2:8080/uploads/${item.image}` }}
+          source={{ uri: `http://10.0.2.2:8080/storage/upload/${item.image}` }}
           style={styles.bookImage}
         />
         <Text style={styles.bookTitle} numberOfLines={2}>
@@ -173,10 +173,12 @@
     },
     bookImage: {
       width: '100%',
-      height: 150,
+      aspectRatio: 2 / 3,
       borderRadius: 8,
       marginBottom: 8,
+      resizeMode: 'cover',
     },
+
     bookTitle: { fontWeight: 'bold', fontSize: 14 },
     bookPrice: { color: 'red', marginVertical: 4 },
     ratingRow: {

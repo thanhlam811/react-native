@@ -19,49 +19,69 @@ const BookDetailScreen = () => {
   const navigation = useNavigation<any>();
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: `http://10.0.2.2:8080/uploads/${book.image}` }}
-          style={styles.image}
-        />
-        <View style={styles.topRightButtons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Icon name="share" size={24} color="#333" />
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: `http://10.0.2.2:8080/storage/upload/${book.image}` }}
+            style={styles.image}
+          />
+          <View style={styles.topRightButtons}>
+            <TouchableOpacity style={styles.iconButton}>
+              <Icon name="share" size={24} color="#333" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Cart')}>
+              <Icon name="shopping-cart" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Text style={styles.title}>{book.title}</Text>
+
+        <View style={styles.priceRow}>
+          <Text style={styles.price}>{book.sellingPrice}đ</Text>
+          <Text style={styles.originalPrice}>{book.listPrice || book.sellingPrice * 1.2}đ</Text>
+        </View>
+
+        <View style={styles.ratingRow}>
+          <View style={styles.ratingStars}>
+            <Icon name="star" size={16} color="#FFD700" />
+            <Text style={styles.ratingText}>4.5</Text>
+          </View>
+          <Text style={styles.soldText}>Sold: 123</Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Descriptions</Text>
+        <Text style={styles.description}>
+          {book.description || 'No description available.'}
+        </Text>
+      </ScrollView>
+
+      {/* Bottom Action Bar */}
+      <View style={styles.bottomBar}>
+        <View style={styles.leftIcons}>
+          <TouchableOpacity style={styles.actionIcon}>
+            <Icon name="favorite-border" size={24} color="#333" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Cart')}>
-            <Icon name="shopping-cart" size={24} color="#333" />
+          <View style={styles.separator} />
+          <TouchableOpacity style={styles.actionIcon}>
+            <Icon name="add-shopping-cart" size={24} color="#333" />
           </TouchableOpacity>
         </View>
+
+        {/* Buy Now button - dùng CustomButton sau */}
+        <TouchableOpacity style={styles.buyNowButton} onPress={() => {}}>
+          <Text style={styles.buyNowText}>BUY NOW</Text>
+        </TouchableOpacity>
       </View>
-
-      <Text style={styles.title}>{book.title}</Text>
-
-      <View style={styles.priceRow}>
-        <Text style={styles.price}>{book.sellingPrice}đ</Text>
-        <Text style={styles.originalPrice}>{book.listPrice || book.sellingPrice * 1.2}đ</Text>
-      </View>
-
-      <View style={styles.ratingRow}>
-        <View style={styles.ratingStars}>
-          <Icon name="star" size={16} color="#FFD700" />
-          <Text style={styles.ratingText}>4.5</Text>
-        </View>
-        <Text style={styles.soldText}>Sold: 123</Text>
-      </View>
-
-      <Text style={styles.sectionTitle}>Descriptions</Text>
-      <Text style={styles.description}>
-        {book.description || 'No description available.'}
-      </Text>
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    backgroundColor: '#fff',
+    paddingBottom: 80, // đảm bảo không che nội dung bởi bottom bar
   },
   imageContainer: {
     position: 'relative',
@@ -69,9 +89,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   image: {
-    width: '100%',
-    height: 300,
-    borderRadius: 10,
+    width: '60%',
+    aspectRatio: 2 / 3,
+    borderRadius: 8,
+    marginBottom: 8,
+    resizeMode: 'cover',
   },
   topRightButtons: {
     position: 'absolute',
@@ -136,6 +158,44 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#555',
     lineHeight: 22,
+  },
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+    justifyContent: 'space-between',
+  },
+  leftIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionIcon: {
+    padding: 10,
+    backgroundColor: '#f1f1f1',
+    borderRadius: 50,
+    marginHorizontal: 5,
+  },
+  separator: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#ccc',
+    marginHorizontal: 5,
+  },
+  buyNowButton: {
+    flex: 1,
+    backgroundColor: '#FF6F61',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginLeft: 10,
+    alignItems: 'center',
+  },
+  buyNowText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 
