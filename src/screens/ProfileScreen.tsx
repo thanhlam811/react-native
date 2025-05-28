@@ -36,9 +36,9 @@ const ProfileScreen = () => {
       logout(); // Xóa token khỏi AsyncStorage, xóa header
       showPopup('Logged out successfully');
       navigation.reset({
-        index: 0,
-        routes: [{ name: 'Auth' }],
-      });
+      index: 0,
+      routes: [{ name: 'Auth' }],
+    });
     } catch (error) {
       showPopup('Logout failed');
       console.error('Logout error:', error);

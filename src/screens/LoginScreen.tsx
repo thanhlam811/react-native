@@ -19,13 +19,13 @@ import CustomButton from '../components/CustomButton';
 import { authApi } from '../api/api';
 import Popup from '../components/Popup';
 import { useAuth } from '../contexts/AuthContext';
-
+import { useNavigation } from '@react-navigation/native';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
-const LoginScreen: React.FC<Props> = ({ navigation }) => {
+const LoginScreen= () => {
+  const navigation = useNavigation<any>();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
 
@@ -54,8 +54,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     }
 
     await login(token); // login là hàm từ context, lưu token vào AsyncStorage
+      navigation.reset({
+      index: 0,
+      routes: [{ name: 'App' }],
+    }); 
     showPopup('Login successful ✅');
-
     setTimeout(() => {
       navigation.replace('HomeTabs');
     }, 1500);

@@ -1,5 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authApi } from '../api/api'
+
 
 // Định nghĩa interface cho context
 interface AuthContextType {
@@ -42,14 +44,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Hàm logout: xóa token, tắt cờ isLoggedIn
   const logout = async () => {
-    try {
-      await AsyncStorage.removeItem('token');
-      setIsLoggedIn(false);
-    } catch (error) {
-      console.error('Failed to remove token', error);
-      throw error;
+  try {
+    const token = await AsyncStorage.getItem('token');
+
+    // Gọi API sign-out nếu token còn
+    if (token) {
+      await authApi.logout(); // logout đã cấu hình truyền token bằng headers rồi
     }
-  };
+
+    // Xóa token ở client
+    await AsyncStorage.removeItem('token');
+    setIsLoggedIn(false);
+  } catch (error) {
+    console.error('Logout failed', error);
+    throw error;
+  }
+};
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, login, logout }}>

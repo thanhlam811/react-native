@@ -1,4 +1,5 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = 'http://10.0.2.2:8080/api';
 
@@ -19,16 +20,7 @@ const api1 = axios.create({
   },
 });
 
-const BASE_URL_2 = 'http://10.0.2.2:8080/';
 
-const api2 = axios.create({
-  
-  baseURL: BASE_URL_2,
-  headers: {
-    'Content-Type': 'application/json',
-    // 'Authorization': `Bearer ${token}`,
-  },
-});
 
 
 
@@ -97,9 +89,20 @@ export const authApi = {
       throw error;
     }
   },
-  logout: async () => {
-    return api2.post('/sign-out');
-  },
+ logout: async () => {
+  const token = await AsyncStorage.getItem('token');
+  if (!token) throw new Error('No token found');
+
+  return api1.post(
+    'auth/sign-out',
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+},
 register: async (
   firstName: string,
   lastName: string,
