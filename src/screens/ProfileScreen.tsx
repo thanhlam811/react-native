@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,33 +10,41 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
+import Popup from '../components/Popup'; // 🟢 Thêm dòng này
 
 // Giả sử bạn có api logout
 import { authApi } from '../api/api'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../contexts/AuthContext'; // 🔥 import context
 
 const ProfileScreen = () => {
+  const { logout } = useAuth();
+
   const navigation = useNavigation<any>();
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
+
+  const showPopup = (message: string) => {
+  setPopupMessage(message);
+  setPopupVisible(true);
+  setTimeout(() => setPopupVisible(false), 2000);
+};
 
   const handleLogout = async () => {
     try {
-
-      // 1. Gọi API logout nếu có
-      await authApi.logout();
-
-      // 2. Xóa token hoặc dữ liệu lưu trong máy
-      await AsyncStorage.removeItem('userToken');
-
-      // 3. Điều hướng về màn hình Auth (login)
+      await authApi.logout(); // Gọi API nếu có xử lý backend
+      logout(); // Xóa token khỏi AsyncStorage, xóa header
+      showPopup('Logged out successfully');
       navigation.reset({
         index: 0,
         routes: [{ name: 'Auth' }],
       });
     } catch (error) {
-      Alert.alert('Logout Failed', 'Please try again later.');
+      showPopup('Logout failed');
       console.error('Logout error:', error);
     }
   };
+
 
   const handleNavigate = (label: string) => {
     switch (label) {
@@ -51,7 +59,6 @@ const ProfileScreen = () => {
         break;
       case 'Log Out':
         handleLogout();
-         navigation.navigate('Auth');
         break;
     }
   };
@@ -113,6 +120,11 @@ const ProfileScreen = () => {
           </TouchableOpacity>
         ))}
       </View>
+        <Popup
+          visible={popupVisible}
+          message={popupMessage}
+          onClose={() => setPopupVisible(false)}
+        />
     </SafeAreaView>
   );
 };

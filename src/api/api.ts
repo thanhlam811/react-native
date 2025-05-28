@@ -19,6 +19,16 @@ const api1 = axios.create({
   },
 });
 
+const BASE_URL_2 = 'http://10.0.2.2:8080/';
+
+const api2 = axios.create({
+  
+  baseURL: BASE_URL_2,
+  headers: {
+    'Content-Type': 'application/json',
+    // 'Authorization': `Bearer ${token}`,
+  },
+});
 
 
 
@@ -73,26 +83,48 @@ export const genreApi = {
   update: async (data: any) => (await api.put(`/genres`, data)).data,
   delete: async (id: number) => (await api.delete(`/genres/${id}`)).data,
 };
-
 export const authApi = {
   login: async (username: string, password: string) => {
     try {
       const response = await api1.post('/auth/sign-in', { username, password });
-      return response.data.data;
+      console.log('🔐 Login response:', response.data);
+      
+      const token = response.data?.data?.access_token;
+      if (!token) throw new Error('Token not found in response');
+
+      return token;  // trả về đúng chuỗi token
     } catch (error) {
       throw error;
     }
   },
   logout: async () => {
-    return api1.post('/sign-out');
+    return api2.post('/sign-out');
   },
-  register: async (name: string, email: string, password: string,  roleId: number) => {
+register: async (
+  firstName: string,
+  lastName: string,
+  email: string,
+  password: string,
+  phoneNumber: string,
+  roleId: number,
+  username:string
+) => {
   try {
-    const response = await api1.post('/auth/register', { name, email, password,roleId });
+    const response = await api1.post('/auth/register', {
+      firstName,
+      lastName,
+      email,
+      password,
+      phoneNumber,
+      role: { roleId }, 
+      username// 👈 gửi object role như backend mong đợi
+    });
     return response.data.data;
   } catch (error) {
     throw error;
   }
 },
+
+
 
 };

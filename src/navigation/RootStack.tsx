@@ -11,34 +11,35 @@ import BookDetail from '../screens/BookDetailScreen';
 import MyOrders from '../screens/MyOrderScreen';
 import Search from '../screens/SearchScreen';
 import AuthStackNavigator from './AuthStackNavigator';
+import { useAuth } from '../contexts/AuthContext';
 // import MyOrder from '../screens/MyOrderScreen';
-
 
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
+  const { isLoggedIn } = useAuth();
+
   return (
-    <Stack.Navigator>
-      <Stack.Screen
-        name="Main"
-        component={BottomTabsNavigator}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen name="BookDetail" component={BookDetail} />
-      
-      <Stack.Screen name="MyOrders" component={MyOrders} />
-      <Stack.Screen name="EditProfile" component={EditProfile} />
-      <Stack.Screen name="Setting" component={Setting} />
-      <Stack.Screen name="Contact" component={Contact} />
-      <Stack.Screen name="Payment" component={Payment} />
-      <Stack.Screen name="Notification" component={Notification} />
-      <Stack.Screen name="Filter" component={Filter} />
-      <Stack.Screen name="Search" component={Search} />
-        <Stack.Screen
-        name="Auth"
-        component={AuthStackNavigator}
-        options={{ headerShown: false }}
-      />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {isLoggedIn ? (
+        <>
+          <Stack.Screen name="Main" component={BottomTabsNavigator} />        
+          <Stack.Screen name="BookDetail" component={BookDetail} />
+          
+          <Stack.Screen name="MyOrders" component={MyOrders} />
+          <Stack.Screen name="EditProfile" component={EditProfile} />
+          <Stack.Screen name="Setting" component={Setting} />
+          <Stack.Screen name="Contact" component={Contact} />
+          <Stack.Screen name="Payment" component={Payment} />
+          <Stack.Screen name="Notification" component={Notification} />
+          <Stack.Screen name="Filter" component={Filter} />
+          <Stack.Screen name="Search" component={Search} />
+        </>
+      ) : (
+        <>
+          <Stack.Screen name="Auth" component={AuthStackNavigator} />
+        </>
+      )}
     </Stack.Navigator>
   );
 }

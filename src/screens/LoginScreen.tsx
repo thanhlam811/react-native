@@ -10,14 +10,15 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/types';
 import CustomButton from '../components/CustomButton';
-import { authApi } from '../api/api';  
+import { authApi } from '../api/api';
+import Popup from '../components/Popup';
+import { useAuth } from '../contexts/AuthContext';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -25,36 +26,51 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
+
+  const { login } = useAuth();
+
+  const showPopup = (message: string) => {
+    setPopupMessage(message);
+    setPopupVisible(true);
+    setTimeout(() => setPopupVisible(false), 2000);
+  };
+
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
-      Alert.alert('Validation Error', 'Username and password cannot be blank');
+  if (!username.trim() || !password.trim()) {
+    showPopup('Username and password cannot be blank');
+    return;
+  }
+
+  try {
+    const data = await authApi.login(username, password);
+    console.log('Login data:', data);
+
+    const token = data; // phải đúng tên 'access_token' như backend trả về
+    if (!token) {
+      showPopup('Token not found in response');
       return;
     }
 
-    try {
-      const userData = await authApi.login(username, password);
-      console.log('Login success:', userData);
+    await login(token); // login là hàm từ context, lưu token vào AsyncStorage
+    showPopup('Login successful ✅');
 
-      // TODO: Lưu token hoặc user info (nếu cần)
-
+    setTimeout(() => {
       navigation.replace('HomeTabs');
-    } catch (error: any) {
-      console.error('Login failed:', error.response?.data?.message || error.message);
+    }, 1500);
+  } catch (error: any) {
+    const errorMsg =
+      error?.response?.data?.message || error.message || 'Username or password is incorrect';
+    showPopup(errorMsg);
+  }
+};
 
-      Alert.alert('Login Failed', error.response?.data?.message || 'Email or password is incorrect');
-    }
-  };
-
-  const handleForgotPassword = () => {
-    navigation.navigate('ForgotPassword');
-  };
-
-  const handleSignUp = () => {
-    navigation.navigate('Register');
-  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <Popup visible={popupVisible} message={popupMessage} onClose={() => setPopupVisible(false)} />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -83,7 +99,10 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 style={styles.input}
               />
 
-              <TouchableOpacity style={styles.forgotWrapper} onPress={handleForgotPassword}>
+              <TouchableOpacity
+                style={styles.forgotWrapper}
+                onPress={() => navigation.navigate('ForgotPassword')}
+              >
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
 
@@ -94,7 +113,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               <View style={styles.signupWrapper}>
                 <Text style={styles.signupText}>
                   Don’t have an account?{' '}
-                  <Text style={styles.signupLink} onPress={handleSignUp}>
+                  <Text style={styles.signupLink} onPress={() => navigation.navigate('Register')}>
                     Sign Up
                   </Text>
                 </Text>
