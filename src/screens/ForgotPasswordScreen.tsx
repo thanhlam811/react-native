@@ -10,19 +10,39 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/types';
 import CustomButton from '../components/CustomButton';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { authApi } from '../api/api'; // import api xử lý
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
 const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleReset = () => {
-    navigation.navigate('EnterCode');
+  const handleReset = async () => {
+    if (!email.trim()) {
+      Alert.alert('Validation', 'Please enter your email');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await authApi.forgotPassword(email.trim());
+      // Giả sử API trả message khi thành công
+      Alert.alert('Success', res.message || 'Check your email for reset code.');
+      navigation.navigate('EnterCode', { email: email.trim() });
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || 'Failed to send reset email. Try again.';
+      Alert.alert('Error', message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -54,10 +74,15 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
               keyboardType="email-address"
               autoCapitalize="none"
               style={styles.input}
+              editable={!loading}
             />
 
             <View style={styles.buttonWrapper}>
-              <CustomButton title="RESET NOW" onPress={handleReset} />
+              <CustomButton
+                title={loading ? 'Sending...' : 'RESET NOW'}
+                onPress={handleReset}
+                disabled={loading}
+              />
             </View>
           </View>
         </ScrollView>

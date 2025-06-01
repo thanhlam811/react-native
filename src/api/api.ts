@@ -20,7 +20,16 @@ const api1 = axios.create({
   },
 });
 
-
+api.interceptors.request.use(
+  async config => {
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  error => Promise.reject(error)
+);
 
 
 
@@ -82,9 +91,11 @@ export const authApi = {
       console.log('🔐 Login response:', response.data);
       
       const token = response.data?.data?.access_token;
+      const data = response.data?.data;
+
       if (!token) throw new Error('Token not found in response');
 
-      return token;  // trả về đúng chuỗi token
+      return data;  // trả về đúng chuỗi token
     } catch (error) {
       throw error;
     }
@@ -127,7 +138,63 @@ register: async (
     throw error;
   }
 },
+getAccount: async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) throw new Error('No token found');
+    console.log('📌 Token:', token);
 
+    const response = await api1.get('/auth/get-account', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json', // thêm nếu server yêu cầu JSON
+      },
+    });
 
+    console.log('✅ Account data:', response.data);
+    return response.data.data;
 
+  } catch (error: any) {
+    if (error.response) {
+      console.log('❌ Server responded with error:', error.response.data);
+    } else if (error.request) {
+      console.log('❌ No response received:', error.request);
+    } else {
+      console.log('❌ Error setting up request:', error.message);
+    }
+    throw error; // vẫn throw để component xử lý Alert hoặc logic khác
+  }
+},
+forgotPassword: async (email: string) => {
+  const response = await api1.post('/auth/forgot-passwd', null, {
+    params: { email },
+  });
+  return response.data;
+},
+// Helper xử lý response có cấu trúc lồn
+}
+
+const get = async (url: string) => {
+  try {
+    const response = await axios.get(url);
+    console.log('✅ Response data:', response.data);
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.log('❌ Server responded with error:', error.response.data);
+    } else if (error.request) {
+      console.log('❌ No response received:', error.request);
+    } else {
+      console.log('❌ Error setting up request:', error.message);
+    }
+    throw error;
+  }
+};
+
+export const cartDetailsApi = {
+  getByUserId: async (userId: number) => {
+    const res = await get(`http://10.0.2.2:8080/api/cart-details?filter=cart:${userId}`);
+    // res.data là phần meta và data theo response của bạn
+    return res.data.data;  // Trả về đúng mảng cart details
+  },
 };

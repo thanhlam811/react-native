@@ -1,71 +1,64 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  Image,
-  ScrollView,
-} from 'react-native';
-import CustomButton from '../components/CustomButton'; // Đảm bảo đường dẫn đúng với cấu trúc dự án của bạn
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Image } from 'react-native';
+import CustomButton from '../components/CustomButton';
+import { authApi } from '../api/api';
 
 const EditProfileScreen = () => {
-  const [name, setName] = useState('John Doe');
-  const [email, setEmail] = useState('john.doe@example.com');
-  const [phone, setPhone] = useState('0123456789');
-  const [address, setAddress] = useState('123 Street, City');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [avatar, setAvatar] = useState('');
 
-  const handleUpdate = () => {
-    // Xử lý cập nhật profile tại đây
-    console.log('Updated:', { name, email, phone, address });
-  };
+  // Gọi API để lấy thông tin người dùng khi mở màn hình
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const data = await authApi.getAccount();
+        setFirstName(data.firstName || '');
+        setLastName(data.lastName || '');
+        setUsername(data.username || '');
+        setEmail(data.email || '');
+        setPhone(data.phoneNumber || '');
+        setAvatar(data.avatar || '');
+      } catch (error) {
+        console.error('❌ Error fetching account:', error);
+        Alert.alert('Error', 'Failed to load profile');
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Avatar và Tên */}
       <View style={styles.avatarSection}>
         <Image
-          source={{ uri: 'https://i.pravatar.cc/100' }}
+          source={{ uri: avatar || 'https://i.pravatar.cc/100' }}
           style={styles.avatar}
         />
       </View>
 
-      {/* Input Fields */}
       <View style={styles.form}>
-        <Text style={styles.label}>Name</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-        />
+        <Text style={styles.label}>First Name</Text>
+        <TextInput style={styles.input} value={firstName} editable={false} />
+
+        <Text style={styles.label}>Last Name</Text>
+        <TextInput style={styles.input} value={lastName} editable={false} />
+
+        <Text style={styles.label}>Username</Text>
+        <TextInput style={styles.input} value={username} editable={false} />
 
         <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
+        <TextInput style={styles.input} value={email} editable={false} />
 
         <Text style={styles.label}>Phone Number</Text>
-        <TextInput
-          style={styles.input}
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-        />
-
-        <Text style={styles.label}>Address</Text>
-        <TextInput
-          style={styles.input}
-          value={address}
-          onChangeText={setAddress}
-        />
+        <TextInput style={styles.input} value={phone} editable={false} />
       </View>
 
-      {/* Custom Button */}
       <View style={styles.buttonWrapper}>
-        <CustomButton title="UPDATE" onPress={handleUpdate} />
+        <CustomButton title="UPDATE" onPress={() => {}}  />
       </View>
     </ScrollView>
   );
@@ -88,10 +81,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 10,
   },
-  username: {
-    fontSize: 20,
-    fontWeight: '600',
-  },
   form: {
     width: '100%',
   },
@@ -107,7 +96,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#f2f2f2',
+    color: '#000',
   },
   buttonWrapper: {
     marginTop: 30,

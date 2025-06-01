@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
   Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -13,46 +14,56 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { RectButton } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../contexts/AuthContext';
 
-const initialData = [
-  {
-    id: '1',
-    title: 'Book A',
-    description: 'Exciting adventure story.',
-    price: 12.99,
-    image: 'https://covers.openlibrary.org/b/id/7222246-L.jpg',
-    quantity: 1,
-    selected: true,
-  },
-  {
-    id: '2',
-    title: 'Book B',
-    description: 'Classic novel you must read.',
-    price: 14.99,
-    image: 'https://covers.openlibrary.org/b/id/8228691-L.jpg',
-    quantity: 2,
-    selected: false,
-  },
-  {
-    id: '3',
-    title: 'Book C',
-    description: 'Futuristic dystopian tale.',
-    price: 10.5,
-    image: 'https://covers.openlibrary.org/b/id/153541-L.jpg',
-    quantity: 1,
-    selected: true,
-  },
-];
-
+import  {cartDetailsApi} from '../api/api'; // giả sử bạn đã export api này đúng
 
 const CartScreen = () => {
-  const [cartItems, setCartItems] = useState(initialData);
-    const navigation = useNavigation<any>();
-  
-   const goToPayment = () => {
-    navigation.navigate('Payment');
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const navigation = useNavigation<any>();
+useEffect(() => {
+  const fetchCartDetails = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const user = await AsyncStorage.getItem('userId');
+      const userId = Number(user);
+      console.log('UserId:', userId);
+      if (!userId) throw new Error('No userId');
+
+      const cartDetails = await cartDetailsApi.getByUserId(userId);
+      console.log('cartDetails:', cartDetails);
+
+      const formatted = cartDetails.map((item: any) => ({
+        id: item.cartDetailsId.toString(),
+        title: item.book?.title || 'No title',
+        description: item.book?.description || '',
+        price: item.book?.sellingPrice || 0,
+        image: item.book?.image
+          ? `http://10.0.2.2:8080/images/${item.book.image}`
+          : 'https://via.placeholder.com/70x100',
+        quantity: item.quantity || 1,
+        selected: true,
+      }));
+
+      setCartItems(formatted);
+    } catch (err) {
+      setError('Failed to load cart details');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  fetchCartDetails();
+}, []);
+
+
+  // các hàm xử lý tăng giảm số lượng, xóa, chọn, etc vẫn giữ nguyên
   const updateQuantity = (id: string, type: 'inc' | 'dec') => {
     setCartItems((prev) =>
       prev.map((item) =>
@@ -60,9 +71,7 @@ const CartScreen = () => {
           ? {
               ...item,
               quantity:
-                type === 'inc'
-                  ? item.quantity + 1
-                  : Math.max(1, item.quantity - 1),
+                type === 'inc' ? item.quantity + 1 : Math.max(1, item.quantity - 1),
             }
           : item
       )
@@ -106,15 +115,29 @@ const CartScreen = () => {
     .reduce((sum, item) => sum + item.price * item.quantity, 0)
     .toFixed(2);
 
+  const goToPayment = () => {
+    navigation.navigate('Payment');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Cart</Text>
         <Icon name="search" size={24} color="#000" />
       </View>
 
-      {/* Cart List */}
+      {loading && <ActivityIndicator size="large" color="#d42b1c" />}
+      {error && (
+        <Text style={{ color: 'red', textAlign: 'center', marginVertical: 8 }}>
+          {error}
+        </Text>
+      )}
+      {!loading && cartItems.length === 0 && (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Your cart is empty</Text>
+        </View>
+      )}
+
       <FlatList
         data={cartItems}
         keyExtractor={(item) => item.id}
@@ -149,7 +172,8 @@ const CartScreen = () => {
                 <View style={styles.quantityRow}>
                   <TouchableOpacity
                     onPress={() => updateQuantity(item.id, 'dec')}
-                    style={[styles.circleBtn, { backgroundColor: '#ffffff' }]} >
+                    style={[styles.circleBtn, { backgroundColor: '#fff' }]}
+                  >
                     <Text style={styles.circleText}>-</Text>
                   </TouchableOpacity>
 
@@ -168,13 +192,12 @@ const CartScreen = () => {
         )}
       />
 
-      {/* Footer */}
       <View style={styles.footer}>
-      <Text style={styles.totalText}>
-        Total: <Text style={styles.totalAmount}>${total}</Text>
-      </Text>
+        <Text style={styles.totalText}>
+          Total: <Text style={styles.totalAmount}>${total}</Text>
+        </Text>
 
-      <TouchableOpacity style={styles.payButton} onPress={goToPayment}>
+        <TouchableOpacity style={styles.payButton} onPress={goToPayment}>
           <Text style={styles.payText}>PAY</Text>
         </TouchableOpacity>
       </View>
@@ -287,7 +310,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   totalAmount: {
-    color: '#d42b1c', // màu đỏ giống nút PAY
+    color: '#d42b1c',
   },
   payButton: {
     backgroundColor: '#d42a1b',
@@ -300,4 +323,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  emptyContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginTop: 50,
+},
+emptyText: {
+  fontSize: 18,
+  color: '#666',
+  fontWeight: '600',
+},
+
 });

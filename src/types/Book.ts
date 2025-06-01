@@ -6,6 +6,9 @@ export interface Book {
     description: string;
     listPrice: number;
     sellingPrice: number;
-    
+    isbn: string;
+    descriptionDetails : string;
+    infoDetails: string;
+    quantity: number;
+    avgRate: number;
   }
-  

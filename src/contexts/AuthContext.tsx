@@ -1,12 +1,13 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authApi } from '../api/api'
-
+import { authApi } from '../api/api';
 
 // Định nghĩa interface cho context
 interface AuthContextType {
   isLoggedIn: boolean;
-  login: (token: string) => Promise<void>;
+  token: string | null;
+  userId: number | null;
+  login: (token: string, userId: number) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -16,53 +17,66 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Provider chứa logic xác thực
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
+  const [token, setToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
   // Kiểm tra token có trong AsyncStorage hay không khi app load
-  useEffect(() => {
+   useEffect(() => {
     const checkLogin = async () => {
       try {
-        const token = await AsyncStorage.getItem('token');
-        setIsLoggedIn(!!token);
+        const storedToken = await AsyncStorage.getItem('token');
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (storedToken && storedUserId) {
+          setToken(storedToken);
+          setUserId(Number(storedUserId)); // nhớ convert về number
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+          setToken(null);
+          setUserId(null);
+        }
       } catch (error) {
-        console.error('Failed to load token from storage', error);
+        console.error('Failed to load auth data from storage', error);
         setIsLoggedIn(false);
+        setToken(null);
+        setUserId(null);
       }
     };
     checkLogin();
   }, []);
 
   // Hàm login: lưu token vào AsyncStorage, bật cờ isLoggedIn
-  const login = async (token: string) => {
+   const login = async (newToken: string, newUserId: number) => {
     try {
-      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('token', newToken);
+      await AsyncStorage.setItem('userId', newUserId.toString()); // lưu dưới dạng string
+      setToken(newToken);
+      setUserId(newUserId);
       setIsLoggedIn(true);
     } catch (error) {
-      console.error('Failed to save token', error);
+      console.error('Failed to save auth data', error);
       throw error;
     }
   };
 
-  // Hàm logout: xóa token, tắt cờ isLoggedIn
+  // Hàm logout: gọi api logout rồi xóa token, tắt cờ isLoggedIn
   const logout = async () => {
-  try {
-    const token = await AsyncStorage.getItem('token');
-
-    // Gọi API sign-out nếu token còn
-    if (token) {
-      await authApi.logout(); // logout đã cấu hình truyền token bằng headers rồi
+    try {
+      if (token) {
+        await authApi.logout();
+      }
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('userId');
+      setToken(null);
+      setUserId(null);
+      setIsLoggedIn(false);
+    } catch (error) {
+      console.error('Logout failed', error);
+      throw error;
     }
-
-    // Xóa token ở client
-    await AsyncStorage.removeItem('token');
-    setIsLoggedIn(false);
-  } catch (error) {
-    console.error('Logout failed', error);
-    throw error;
-  }
-};
+  };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, token, userId, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

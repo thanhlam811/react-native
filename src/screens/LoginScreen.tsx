@@ -20,6 +20,7 @@ import { authApi } from '../api/api';
 import Popup from '../components/Popup';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 const LoginScreen= () => {
@@ -47,14 +48,20 @@ const LoginScreen= () => {
     const data = await authApi.login(username, password);
     console.log('Login data:', data);
 
-    const token = data; // phải đúng tên 'access_token' như backend trả về
+    const token = data?.access_token;
+    const userId = data?.userLogin?.userId; // phải đúng tên 'access_token' như backend trả về
     if (!token) {
       showPopup('Token not found in response');
       return;
     }
 
-    await login(token); // login là hàm từ context, lưu token vào AsyncStorage
-      navigation.reset({
+    await AsyncStorage.setItem('token', token);
+    await AsyncStorage.setItem('userId', userId.toString());
+    console.log( 'Token is ',token)
+
+// login là hàm từ context, lưu token vào AsyncStorage
+
+    navigation.reset({
       index: 0,
       routes: [{ name: 'App' }],
     }); 
