@@ -6,10 +6,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ToastAndroid,
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { Book } from '../types/Book';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { cartDetailsApi } from '../api/api';
 
 type BookDetailRouteProp = RouteProp<{ params: { book: Book } }, 'params'>;
 
@@ -64,9 +66,22 @@ const BookDetailScreen = () => {
             <Icon name="favorite-border" size={24} color="#333" />
           </TouchableOpacity>
           <View style={styles.separator} />
-          <TouchableOpacity style={styles.actionIcon}>
+          <TouchableOpacity
+            style={styles.actionIcon}
+            onPress={async () => {
+              try {
+                await cartDetailsApi.addToCart(book.bookId, 1); // <-- gọi API thêm vào giỏ
+                ToastAndroid.show('Added to cart!', ToastAndroid.SHORT);
+                navigation.navigate('Cart', { refresh: true }); 
+              } catch (err) {
+                ToastAndroid.show('Add to cart failed', ToastAndroid.SHORT);
+                console.error('❌ Add to cart error:', err);
+              }
+            }}
+          >
             <Icon name="add-shopping-cart" size={24} color="#333" />
           </TouchableOpacity>
+
         </View>
 
         {/* Buy Now button - dùng CustomButton sau */}

@@ -40,6 +40,7 @@ useEffect(() => {
 
       const formatted = cartDetails.map((item: any) => ({
         id: item.cartDetailsId.toString(),
+        bookId: item.book?.bookId,
         title: item.book?.title || 'No title',
         description: item.book?.description || '',
         price: item.book?.sellingPrice || 0,
@@ -64,19 +65,38 @@ useEffect(() => {
 
 
   // các hàm xử lý tăng giảm số lượng, xóa, chọn, etc vẫn giữ nguyên
-  const updateQuantity = (id: string, type: 'inc' | 'dec') => {
+const updateQuantity = async (id: string, type: 'inc' | 'dec') => {
+  const targetItem = cartItems.find((item) => item.id === id);
+  if (!targetItem) return;
+
+  const delta = type === 'inc' ? 1 : -1;
+  const newQuantity = targetItem.quantity + delta;
+
+  if (newQuantity < 1) return;
+
+  console.log(`[CartScreen] Updating quantity:`, {
+    bookId: targetItem.bookId,
+    delta,
+    oldQuantity: targetItem.quantity,
+    newQuantity,
+  });
+
+  try {
+    await cartDetailsApi.addToCart(targetItem.bookId, delta);
+
+    console.log(`[CartScreen] API call success`);
+
     setCartItems((prev) =>
       prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              quantity:
-                type === 'inc' ? item.quantity + 1 : Math.max(1, item.quantity - 1),
-            }
-          : item
+        item.id === id ? { ...item, quantity: newQuantity } : item
       )
     );
-  };
+  } catch (error) {
+    console.error('[CartScreen] Failed to update quantity:', error);
+  }
+};
+
+
 
   const toggleSelect = (id: string) => {
     setCartItems((prev) =>
@@ -116,8 +136,11 @@ useEffect(() => {
     .toFixed(2);
 
   const goToPayment = () => {
-    navigation.navigate('Payment');
+    const selectedItems = cartItems.filter(item => item.selected);
+    console.log('[CartScreen] Selected Items:', selectedItems); // log kiểm tra
+    navigation.navigate('Payment', { selectedItems });
   };
+
 
   return (
     <SafeAreaView style={styles.container}>

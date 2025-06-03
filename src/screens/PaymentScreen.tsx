@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,61 +7,92 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { userApi,cartDetailsApi } from '../api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const selectedItems = [
-  {
-    id: '1',
-    title: 'Clean Code',
-    description: 'A Handbook of Agile Software Craftsmanship',
-    price: 25.99,
-    quantity: 1,
-    image: 'https://images-na.ssl-images-amazon.com/images/I/41xShlnTZTL._SX374_BO1,204,203,200_.jpg',
-  },
-  {
-    id: '2',
-    title: 'The Pragmatic Programmer',
-    description: 'Your Journey to Mastery',
-    price: 30.00,
-    quantity: 2,
-    image: 'https://m.media-amazon.com/images/I/51A5Q0tQnGL.jpg',
-  },
-  {
-    id: '3',
-    title: 'Design Patterns',
-    description: 'Elements of Reusable Object-Oriented Software',
-    price: 45.50,
-    quantity: 1,
-    image: 'https://m.media-amazon.com/images/I/51k0qaip5iL._SX342_SY445_QL70_ML2_.jpg',
-  },
-];
+type CartItem = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  quantity: number;
+  image: string;
+};
+
+type PaymentRouteParams = {
+  selectedItems: CartItem[];
+};
+
+// ... import giữ nguyên như bạn đã có
 
 const PaymentScreen = () => {
-
   const navigation = useNavigation();
   const route = useRoute();
-  const [cartItems, setCartItems] = useState(selectedItems);
+  const { selectedItems } = route.params as PaymentRouteParams;
 
-  const [name, setName] = useState('');
+  const [cartItems, setCartItems] = useState<CartItem[]>(selectedItems);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [promoCode, setPromoCode] = useState('');
+  const [availableVouchers, setAvailableVouchers] = useState<any[]>([]);
+  const [selectedVoucher, setSelectedVoucher] = useState<any | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'Momo' | 'COD'>('COD');
 
-  const total = cartItems
-    .reduce((sum: number, item: any) => sum + item.price * item.quantity, 0)
-    .toFixed(2);
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const userIdStr = await AsyncStorage.getItem('userId');
+        if (!userIdStr) {
+          Alert.alert('Lỗi', 'Không tìm thấy thông tin người dùng');
+          return;
+        }
+        const userId = parseInt(userIdStr, 10);
+        const user = await userApi.getOne(userId);
+        setFirstName(user.firstName || '');
+        setLastName(user.lastName || '');
+        setEmail(user.email || '');
+        setPhone(user.phoneNumber || '');
+        setAddress(user.buyingAddress || '');
 
-  const renderItem = ({ item }: any) => (
+        const userVoucherList = await cartDetailsApi.getVoucherbyUserId(userId);
+        const unusedVouchers = userVoucherList.filter((item: any) => !item.used);
+        setAvailableVouchers(unusedVouchers);
+      } catch (err) {
+        console.error('Lỗi lấy thông tin người dùng hoặc voucher:', err);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  const totalBeforeDiscount = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const discount = selectedVoucher
+    ? totalBeforeDiscount * selectedVoucher.voucher.discountAmount
+    : 0;
+
+  const total = totalBeforeDiscount - discount;
+
+  const renderItem = ({ item }: { item: CartItem }) => (
     <View style={styles.card}>
       <Image source={{ uri: item.image }} style={styles.image} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.bookTitle} numberOfLines={1}>{item.title}</Text>
-        <Text style={styles.description} numberOfLines={1}>{item.description}</Text>
+        <Text style={styles.bookTitle} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text style={styles.description} numberOfLines={1}>
+          {item.description}
+        </Text>
         <Text style={styles.price}>${item.price.toFixed(2)}</Text>
         <Text style={styles.quantity}>Quantity: {item.quantity}</Text>
       </View>
@@ -71,88 +102,151 @@ const PaymentScreen = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom']}>
       <FlatList
-      data={cartItems} // Use cartItems state instead of selectedItems
-      keyExtractor={(item) => item.id}
-      renderItem={renderItem}
-      ListHeaderComponent={
-        <View style={styles.container}>
-         
+        data={cartItems}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        ListHeaderComponent={
+          <View style={styles.container}>
+            <Text style={styles.sectionTitle}>Delivery address</Text>
+            <View style={styles.nameRow}>
+              <TextInput
+                style={[styles.input, styles.nameInput]}
+                placeholder="First Name"
+                value={firstName}
+                onChangeText={setFirstName}
+              />
+              <TextInput
+                style={[styles.input, styles.nameInput]}
+                placeholder="Last Name"
+                value={lastName}
+                onChangeText={setLastName}
+              />
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Phone number"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Address"
+              value={address}
+              onChangeText={setAddress}
+            />
 
-          {/* Delivery address */}
-          <Text style={styles.sectionTitle}>Delivery address</Text>
-          <TextInput style={styles.input} placeholder="Name" value={name} onChangeText={setName} />
-          <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
-          <TextInput style={styles.input} placeholder="Phone number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-          <TextInput style={styles.input} placeholder="Address" value={address} onChangeText={setAddress} />
+            <Text style={styles.sectionTitle}>Product items</Text>
+          </View>
+        }
+        ListFooterComponent={
+          <View style={{ paddingHorizontal: 16 }}>
+            
+            <Text style={styles.sectionTitle}>Voucher</Text>
+            {availableVouchers.length > 0 ? (
+              availableVouchers.map((item: any) => (
+                <TouchableOpacity
+                  key={item.voucher.voucherId}
+                  style={[
+                    styles.voucherCard,
+                    selectedVoucher?.voucher.voucherId === item.voucher.voucherId &&
+                      styles.voucherCardSelected,
+                  ]}
+                  onPress={() =>
+                    setSelectedVoucher((prev:any) =>
+                      prev?.voucher.voucherId === item.voucher.voucherId ? null : item
+                    )
+                  }
+                >
+                  <Text
+                    style={{
+                      color:
+                        selectedVoucher?.voucher.voucherId === item.voucher.voucherId
+                          ? '#fff'
+                          : '#000',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    {item.voucher.code}
+                  </Text>
+                  <Text
+                    style={{
+                      color:
+                        selectedVoucher?.voucher.voucherId === item.voucher.voucherId
+                          ? '#fff'
+                          : '#000',
+                    }}
+                  >
+                    Discount: {item.voucher.discountAmount * 100}%
+                  </Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={{ color: 'gray', marginBottom: 10 }}>
+                No voucher available
+              </Text>
+            )}
 
-          {/* Product items */}
-          <Text style={styles.sectionTitle}>Product items</Text>
-        </View>
-      }
-      ListFooterComponent={
-        <View style={{ paddingHorizontal: 16 }}>
-          {/* Promo Code */}
-          <Text style={styles.sectionTitle}>Promo Code</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Promo Code"
-            value={promoCode}
-            onChangeText={setPromoCode}
-          />
+            <Text style={styles.sectionTitle}>Payment method</Text>
+            <View style={styles.paymentMethods}>
+              {['Momo', 'COD'].map((method) => (
+                <TouchableOpacity
+                  key={method}
+                  style={[
+                    styles.paymentOption,
+                    paymentMethod === method && styles.selectedOption,
+                  ]}
+                  onPress={() => setPaymentMethod(method as 'Momo' | 'COD')}
+                >
+                  <Text style={styles.paymentText}>{method}</Text>
+                  {paymentMethod === method && (
+                    <Icon name="check" size={18} color="#fff" style={styles.checkIcon} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
 
-          {/* Payment method */}
-          <Text style={styles.sectionTitle}>Payment method</Text>
-          <View style={styles.paymentMethods}>
-            {['Momo', 'COD'].map((method) => (
+            <View style={styles.footer}>
+              <Text style={styles.totalText}>
+                Total: <Text style={styles.totalAmount}>${total.toFixed(2)}</Text>
+              </Text>
               <TouchableOpacity
-                key={method}
-                style={[
-                  styles.paymentOption,
-                  paymentMethod === method && styles.selectedOption,
-                ]}
-                onPress={() => setPaymentMethod(method as 'Momo' | 'COD')}
+                style={styles.orderButton}
+                onPress={() => {
+                  if (!firstName || !lastName || !email || !phone || !address) {
+                    Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ thông tin giao hàng.');
+                  } else {
+                    Alert.alert('Đặt hàng thành công', 'Cảm ơn bạn đã mua hàng!');
+                    navigation.goBack();
+                  }
+                }}
               >
-                <Text style={styles.paymentText}>{method}</Text>
-                {paymentMethod === method && (
-                  <Icon name="check" size={18} color="#fff" style={styles.checkIcon} />
-                )}
+                <Text style={styles.orderText}>ORDER</Text>
               </TouchableOpacity>
-            ))}
+            </View>
           </View>
-
-          {/* Total and Order button */}
-          <View style={styles.footer}>
-            <Text style={styles.totalText}>Total: <Text style={styles.totalAmount}>${total}</Text></Text>
-            <TouchableOpacity
-              style={styles.orderButton}
-              onPress={() => {
-                if (!name || !email || !phone || !address) {
-                  alert('Please fill in all delivery information.');
-                } else {
-                  alert('Order placed successfully!');
-                  navigation.goBack();
-                }
-              }}
-            >
-              <Text style={styles.orderText}>ORDER</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      }
-      contentContainerStyle={{ paddingBottom: 100 }}
-    />
+        }
+        contentContainerStyle={{ paddingBottom: 100 }}
+      />
     </SafeAreaView>
   );
 };
 
 export default PaymentScreen;
 
+
 const styles = StyleSheet.create({
   container: {
     padding: 16,
     backgroundColor: '#fff',
   },
-
   sectionTitle: {
     marginTop: 0,
     marginBottom: 8,
@@ -243,5 +337,24 @@ const styles = StyleSheet.create({
   orderText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  nameInput: {
+    flex: 1,
+  },
+  voucherCard: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  voucherCardSelected: {
+    backgroundColor: '#d42b1c',
+    borderColor: '#d42b1c',
   },
 });

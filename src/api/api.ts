@@ -191,10 +191,49 @@ const get = async (url: string) => {
   }
 };
 
+
+const post = async (url: string, data: any) => {
+  try {
+    const token = await AsyncStorage.getItem('token'); // Lấy token từ storage
+    const response = await axios.post(url, data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log('✅ Add to cart success:', response.data);
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.log('❌ Add to cart error:', error.response.data);
+    } else {
+      console.log('❌ Add to cart request failed:', error.message);
+    }
+    throw error;
+  }
+};
+
 export const cartDetailsApi = {
   getByUserId: async (userId: number) => {
     const res = await get(`http://10.0.2.2:8080/api/cart-details?filter=cart:${userId}`);
     // res.data là phần meta và data theo response của bạn
     return res.data.data;  // Trả về đúng mảng cart details
   },
+   addToCart: async (bookId: number, quantity: number) => {
+    return await post('http://10.0.2.2:8080/api/add-to-cart', { bookId, quantity });
+  },
+ getVoucherbyUserId: async (userId: number) => {
+  const res = await get(`http://10.0.2.2:8080/api/user-voucher?filter=user:${userId}`);
+  
+  console.log("data voucher",res.data.data[0])
+ const userVoucherList = res.data.data; // Mảng các UserVoucher
+
+  userVoucherList.forEach((item:any) => {
+    const voucher = item.voucher;
+    const used = item.used
+    console.log(voucher);        
+    console.log(used);        
+
+  }); 
+  return res.data.data; // <--- data nằm trong res.data.data.data
+},
 };
