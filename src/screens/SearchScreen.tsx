@@ -7,11 +7,15 @@ import {
   FlatList,
   StyleSheet,
   Image,
+  ActivityIndicator,
+  Keyboard,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // hoặc 'react-native-vector-icons/Ionicons'
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
- import Icon from 'react-native-vector-icons/MaterialIcons';
+
+import { bookApi } from '../api/api'; // Đường dẫn đúng
 
 const previousSearches = [
   'Tôi thấy hoa vàng trên cỏ xanh',
@@ -20,49 +24,34 @@ const previousSearches = [
   'Mắt Biếc',
 ];
 
-const popularBooks = [
-  {
-    id: '1',
-    title: 'Mùa hè không tên',
-    price: '90.000đ',
-    rating: 4.5,
-    sold: 1.8,
-    image: 'https://upload.wikimedia.org/wikipedia/vi/9/98/T%C3%B4i_l%C3%A0_B%C3%AAt%C3%B4.jpg',
-  },
-  {
-    id: '2',
-    title: 'Tôi thấy hoa vàng trên cỏ xanh',
-    price: '90.000đ',
-    rating: 4.5,
-    sold: 1.1,
-    image: 'https://upload.wikimedia.org/wikipedia/vi/9/98/T%C3%B4i_l%C3%A0_B%C3%AAt%C3%B4.jpg',
-  },
-  {
-    id: '3',
-    title: 'Làm bạn với bầu trời',
-    price: '90.000đ',
-    rating: 4.5,
-    sold: 1.6,
-    image: 'https://upload.wikimedia.org/wikipedia/vi/9/98/T%C3%B4i_l%C3%A0_B%C3%AAt%C3%B4.jpg',
-  },
-  {
-    id: '4',
-    title: 'Trên đỉnh một mái nhà',
-    price: '90.000đ',
-    rating: 4.5,
-    sold: 1.3,
-    image: 'https://upload.wikimedia.org/wikipedia/vi/9/98/T%C3%B4i_l%C3%A0_B%C3%AAt%C3%B4.jpg',
-  },
-];
-
 const SearchScreen = () => {
   const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigation = useNavigation<any>();
 
+  const handleSearch = async () => {
+    if (search.trim() === '') {
+      setSearchResults([]);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await bookApi.search(search.trim());
+      setSearchResults(data);
+      Keyboard.dismiss();
+    } catch (err) {
+      setError('Lỗi khi tìm kiếm sách');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderBookItem = ({ item }: any) => (
     <View style={styles.bookItem}>
-      <Image source={item.image} style={styles.bookImage} />
+      <Image source={{ uri: item.image }} style={styles.bookImage} />
       <Text style={styles.bookTitle} numberOfLines={2}>{item.title}</Text>
       <Text style={styles.bookPrice}>{item.price}</Text>
       <View style={styles.bookInfo}>
@@ -73,66 +62,81 @@ const SearchScreen = () => {
   );
 
   return (
-     <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Search bar */}
+        <View style={styles.searchContainer}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={20} color="#000" />
+          </TouchableOpacity>
 
-    <View style={styles.container}>
-      {/* Search bar */}
-      <View style={styles.searchContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color="#000" />
-        </TouchableOpacity>
+          <View style={styles.searchBox}>
+            <Ionicons name="search" size={16} color="#888" style={{ marginHorizontal: 6 }} />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Tìm kiếm sách..."
+              style={styles.input}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => {
+                setSearch('');
+                setSearchResults([]);
+              }}>
+                <Ionicons name="close" size={16} color="#888" />
+              </TouchableOpacity>
+            )}
 
-        <View style={styles.searchBox}>
-          <Ionicons name="search" size={16} color="#888" style={{ marginHorizontal: 6 }} />
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search"
-            style={styles.input}
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close" size={16} color="#888" />
-            </TouchableOpacity>
-            
-          )}
-
-        <TouchableOpacity onPress={() => navigation.navigate('Filter')}>
+            <TouchableOpacity onPress={() => navigation.navigate('Filter')}>
               <Icon name="tune" size={20} color="#888" />
             </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Previous search */}
+        <Text style={styles.sectionTitle}>Tìm kiếm trước đó</Text>
+        {previousSearches.map((item, index) => (
+          <View key={index} style={styles.historyItem}>
+            <Text style={styles.historyText}>{item}</Text>
+            <TouchableOpacity>
+              <Ionicons name="close" size={16} color="#aaa" />
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        {/* Search Results */}
+        <Text style={styles.sectionTitle}>Kết quả tìm kiếm</Text>
+        {loading && <ActivityIndicator size="small" color="#d42a1b" />}
+        {error && <Text style={{ color: 'red' }}>{error}</Text>}
+
+        {!loading && searchResults.length === 0 && search.trim() !== '' && (
+          <Text>Không tìm thấy sách phù hợp</Text>
+        )}
+
+        <FlatList
+          data={searchResults}
+          keyExtractor={(item) => item.id.toString()}
+          numColumns={2}
+          renderItem={renderBookItem}
+          columnWrapperStyle={{ justifyContent: 'space-between' }}
+          contentContainerStyle={{ paddingBottom: 80 }}
+          showsVerticalScrollIndicator={false}
+        />
       </View>
-
-      {/* Previous search */}
-      <Text style={styles.sectionTitle}>Previous Search</Text>
-      {previousSearches.map((item, index) => (
-        <View key={index} style={styles.historyItem}>
-          <Text style={styles.historyText}>{item}</Text>
-          <TouchableOpacity>
-            <Ionicons name="close" size={16} color="#aaa" />
-          </TouchableOpacity>
-        </View>
-      ))}
-
-      {/* Popular Books */}
-      <Text style={styles.sectionTitle}>Popular Books</Text>
-      <FlatList
-        data={popularBooks}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        renderItem={renderBookItem}
-        columnWrapperStyle={{ justifyContent: 'space-between' }}
-        contentContainerStyle={{ paddingBottom: 80 }}
-        showsVerticalScrollIndicator={false}
-      />
-    </View>
-          
-     </SafeAreaView>
+    </SafeAreaView>
   );
 };
 
 export default SearchScreen;
+
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -209,9 +213,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#555',
   },
-  safeArea: {
-  flex: 1,
-  backgroundColor: '#fff',
-},
-
 });

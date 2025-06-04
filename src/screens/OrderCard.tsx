@@ -5,7 +5,6 @@ interface OrderCardProps {
   showCancel?: boolean;
   showWriteReview?: boolean;
 }
-
 const OrderCard: React.FC<OrderCardProps> = ({ showCancel, showWriteReview }) => {
   return (
     <View style={styles.cardContainer}>

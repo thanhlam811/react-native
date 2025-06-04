@@ -4,38 +4,11 @@ import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { useRoute,RouteProp  } from '@react-navigation/native'; // ✅ thêm dòng này
 import { ScrollView } from 'react-native';
 import OrderCard from './OrderCard';
+import ToConfirm from './ToConfirm';
+import ToShip from './ToShip';
+import ToReceive from './ToReceive';
+import Rating from './Rating';
 
-export const ToConfirm = () => (
-  <ScrollView>
-    <OrderCard showCancel />
-    <OrderCard showCancel />
-    <OrderCard showCancel />
-  </ScrollView>
-);
-
-export const ToShip = () => (
-  <ScrollView>
-    <OrderCard />
-    <OrderCard />
-    <OrderCard />
-  </ScrollView>
-);
-
-export const ToReceive = () => (
-  <ScrollView>
-    <OrderCard />
-    <OrderCard />
-    <OrderCard />
-  </ScrollView>
-);
-
-export const Rating = () => (
-  <ScrollView>
-    <OrderCard showWriteReview />
-    <OrderCard showWriteReview />
-    <OrderCard showWriteReview />
-  </ScrollView>
-);
 
 const renderScene = SceneMap({
   confirm: ToConfirm,

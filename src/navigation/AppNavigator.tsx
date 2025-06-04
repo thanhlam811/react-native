@@ -10,6 +10,8 @@ import Filter from '../screens/FilterScreen';
 import BookDetail from '../screens/BookDetailScreen';
 import MyOrders from '../screens/MyOrderScreen';
 import Search from '../screens/SearchScreen';
+import RatingScreen from '../screens/RatingScreen';
+import OrderInformationScreen from '../screens/OrderInformationScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -29,6 +31,8 @@ export default function AppNavigator() {
       <Stack.Screen name="Payment" component={Payment} />
       <Stack.Screen name="Notification" component={Notification} />
       <Stack.Screen name="Filter" component={Filter} />
+      <Stack.Screen name="RatingScreen" component={RatingScreen} />
+      <Stack.Screen name="OrderInformationScreen" component={OrderInformationScreen} />
       <Stack.Screen name="Search" component={Search} options={{ headerShown: false }}/>
     </Stack.Navigator>
   );

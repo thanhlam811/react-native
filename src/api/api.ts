@@ -42,6 +42,29 @@ export const bookApi = {
   create: async (data: any) => (await api.post(`/books`, data)).data,
   update: async (data: any) => (await api.put(`/books`, data)).data,
   delete: async (id: number) => (await api.delete(`/books/${id}`)).data,
+
+  // Hàm search sách theo tiêu đề
+search: async (keyword: string) => {
+    const res = await api.get(`/books?filter=title~'${keyword}'`);
+    const rawBooks = extractData(res);
+
+    // map lại để phù hợp với các trường bạn dùng trong UI
+    const books = rawBooks.map((book: any) => ({
+      id: book.bookId,
+      title: book.title,
+      price: book.sellingPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }), // format tiền
+      rating: book.avgRate.toFixed(1),
+      sold: Math.floor(Math.random() * 100), // giả lập số sách đã bán (API chưa có trường sold)
+      image: book.listOfImage.length > 0 ? book.listOfImage[0].path : 'https://via.placeholder.com/150', // lấy ảnh đầu hoặc ảnh mặc định
+    }));
+
+    return books;
+  },
+    filterBooks: async (filters: string) => {
+    // ví dụ filter chuỗi query: 'price>100000;rating>4'
+    const res = await api.get(`/books?filter=${encodeURIComponent(filters)}`);
+    return extractData(res);
+  },
 };
 
 export const userApi = {
@@ -59,6 +82,44 @@ export const deliveryApi = {
   create: async (data: any) => (await api.post(`/deliveries`, data)).data,
   update: async (data: any) => (await api.put(`/deliveries`, data)).data,
   delete: async (id: number) => (await api.delete(`/deliveries/${id}`)).data,
+};
+export const getOrderDetailsByOrderId = async (orderId: number) => {
+  try {
+    const url = `http://10.0.2.2:8080/api/order-details?filter=order.orderId:${orderId}`;
+    const res = await axios.get(url);
+    const details = res.data.data.data; // tùy API trả về
+    console.log(details);
+    
+    return details;
+  } catch (error) {
+    console.error('Lỗi lấy chi tiết đơn hàng:', error);
+    return [];
+  }
+};
+
+export const getOrderbyUserId = async (userId: number) => {
+  try {
+    const res = await axios.get(
+      `http://10.0.2.2:8080/api/orders?filter=user:${userId}&filter=status:'PENDING'`
+    );
+    const Orderlist = res.data.data.data;
+
+    // Lấy chi tiết từng đơn hàng
+    const detailedOrders = await Promise.all(
+      Orderlist.map(async (order: any) => {
+        const details = await getOrderDetailsByOrderId(order.orderId);
+        return {
+          ...order,
+          details,
+        };
+      })
+    );
+
+    return detailedOrders;
+  } catch (error) {
+    console.error('Lỗi lấy dữ liệu orderlist:', error);
+    return [];
+  }
 };
 
 export const feedbackApi = {
