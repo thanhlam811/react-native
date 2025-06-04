@@ -29,7 +29,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Payment" component={Payment} />
       <Stack.Screen name="Notification" component={Notification} />
       <Stack.Screen name="Filter" component={Filter} />
-      <Stack.Screen name="Search" component={Search} />
+      <Stack.Screen name="Search" component={Search} options={{ headerShown: false }}/>
     </Stack.Navigator>
   );
 }

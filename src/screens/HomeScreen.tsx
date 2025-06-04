@@ -74,10 +74,21 @@
           {/* Search Bar */}
           <View style={styles.searchBar}>
             <Icon name="search" size={20} color="#888" />
-            <TextInput style={styles.searchInput} placeholder="Search" />
-            <TouchableOpacity onPress={() => navigation.navigate('Filter')}>
+                  <TouchableOpacity
+                style={styles.fakeInput}
+                onPress={() => navigation.navigate('Search')} // 👈 Tên screen bạn đặt trong Stack.Navigator
+              >
+                <TextInput
+                  placeholder="Search"
+                  editable={false}
+                  pointerEvents="none"
+                  style={styles.searchInput}
+                />
+              </TouchableOpacity>
+                  <TouchableOpacity onPress={() => navigation.navigate('Filter')}>
               <Icon name="tune" size={20} color="#888" />
             </TouchableOpacity>
+
           </View>
 
           {/* Genres */}
@@ -194,6 +205,10 @@
       fontSize: 12,
       color: '#555',
     },
+    fakeInput: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
   });
 
   export default HomeScreen;

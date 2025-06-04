@@ -57,6 +57,61 @@ const BookDetailScreen = () => {
         <Text style={styles.description}>
           {book.description || 'No description available.'}
         </Text>
+          <Text style={styles.sectionTitle}>Ratings & Reviews</Text>
+        <View style={styles.reviewSummary}>
+          <View style={styles.reviewLeft}>
+            <Text style={styles.reviewScore}>4.7</Text>
+            <View style={styles.reviewStars}>
+              {[...Array(5)].map((_, i) => (
+                <Icon key={i} name="star" size={16} color={i < 4.7 ? '#FFD700' : '#ccc'} />
+              ))}
+            </View>
+            <Text style={styles.reviewCount}>109 Reviews</Text>
+          </View>
+          <View style={styles.reviewBars}>
+            {[5, 4, 3, 2, 1].map((star, idx) => (
+              <View key={star} style={styles.reviewBarRow}>
+                <Text style={styles.barLabel}>{star}</Text>
+                <View style={styles.barBackground}>
+                  <View style={[styles.barFill, { width: `${[80, 60, 20, 10, 5][idx]}%` }]} />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Một review mẫu */}
+        {[1, 2].map((_, index) => (
+          <View key={index} style={styles.reviewItem}>
+            <View style={styles.reviewHeader}>
+              <Image
+                source={{ uri: 'https://via.placeholder.com/40' }}
+                style={styles.avatar}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.userName}>User Name</Text>
+                <View style={{ flexDirection: 'row' }}>
+                  {[...Array(5)].map((_, i) => (
+                    <Icon key={i} name="star" size={16} color={i < 4 ? '#FFD700' : '#ccc'} />
+                  ))}
+                </View>
+              </View>
+              <Text style={styles.reviewDate}>1 Month ago</Text>
+            </View>
+            <Text style={styles.reviewText}>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            </Text>
+            <View style={styles.reviewImages}>
+              {[1, 2, 3].map(i => (
+                <Image
+                  key={i}
+                  source={{ uri: 'https://via.placeholder.com/80' }}
+                  style={styles.reviewImage}
+                />
+              ))}
+            </View>
+          </View>
+        ))}
       </ScrollView>
 
       {/* Bottom Action Bar */}
@@ -89,6 +144,8 @@ const BookDetailScreen = () => {
           <Text style={styles.buyNowText}>BUY NOW</Text>
         </TouchableOpacity>
       </View>
+            
+
     </View>
   );
 };
@@ -167,7 +224,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 20,
+    marginTop:20,
   },
   description: {
     fontSize: 16,
@@ -212,6 +270,91 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+    reviewSummary: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    gap: 16,
+  },
+  reviewLeft: {
+    alignItems: 'center',
+    width: 80,
+  },
+  reviewScore: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  reviewStars: {
+    flexDirection: 'row',
+    marginVertical: 4,
+  },
+  reviewCount: {
+    fontSize: 12,
+    color: '#666',
+  },
+  reviewBars: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 4,
+  },
+  reviewBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  barLabel: {
+    width: 20,
+    fontSize: 12,
+    color: '#333',
+  },
+  barBackground: {
+    height: 8,
+    backgroundColor: '#eee',
+    flex: 1,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: 8,
+    backgroundColor: '#FF6F61',
+  },
+  reviewItem: {
+    marginBottom: 20,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  userName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  reviewDate: {
+    fontSize: 12,
+    color: '#999',
+  },
+  reviewText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 8,
+  },
+  reviewImages: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  reviewImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+
 });
 
 export default BookDetailScreen;

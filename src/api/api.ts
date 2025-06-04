@@ -72,9 +72,33 @@ export const feedbackApi = {
 export const favoriteApi = {
   getAll: async (page = 1) => extractData(await api.get(`/favorites?page=${page}`)),
   getOne: async (id: number) => (await api.get(`/favorites/${id}`)).data.data,
+  // <--- data nằm trong res.data.data.data
   create: async (data: any) => (await api.post(`/favorites`, data)).data,
   update: async (data: any) => (await api.put(`/favorites`, data)).data,
   delete: async (id: number) => (await api.delete(`/favorites/${id}`)).data,
+};
+
+export const getFavouritebyUserId = async (userId: number) => {
+  try {
+    const res = await axios.get(`http://10.0.2.2:8080/api/favorites?filter=user:${userId}`);
+    const favoriteList = res.data.data.data; 
+    console.log("favoriteList ne",favoriteList);
+    // <--- data thực nằm ở đây
+    return favoriteList;
+  } catch (error) {
+    console.error('Lỗi lấy dữ liệu favorites:', error);
+    return [];
+  }
+};
+export const removeFavorite = async (favoriteId: number) => {
+  try {
+    const res = await axios.delete(`http://10.0.2.2:8080/api/favorites/${favoriteId}`);
+    console.log('Xóa favorite thành công:', favoriteId);
+    return true;
+  } catch (error) {
+    console.error('Lỗi khi xóa favorite:', error);
+    return false;
+  }
 };
 
 export const genreApi = {

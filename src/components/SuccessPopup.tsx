@@ -10,18 +10,13 @@ const SuccessPopup: React.FC<Props> = ({ visible, onClose }) => {
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
-        <View style={styles.container}>
+        <View style={styles.popup}>
           <Image
-            source={require('../assets/success.png')} // ✅ ảnh check xanh
+            source={require('../assets/f9362360-dbd7-43bb-baa5-d8a11d5ebaeb.png')} // ✅ ảnh check xanh mới
             style={styles.icon}
           />
-          <Text style={styles.title}>Congratulation!</Text>
-          <Text style={styles.subtitle}>
-            Your account is completed, please enjoy the best book from us.
-          </Text>
-          <TouchableOpacity style={styles.button} onPress={onClose}>
-            <Text style={styles.buttonText}>Get started</Text>
-          </TouchableOpacity>
+          <Text style={styles.title}>Successful!</Text>
+          <Text style={styles.subtitle}>Your order is canceled!</Text>
         </View>
       </View>
     </Modal>
@@ -33,41 +28,37 @@ export default SuccessPopup;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  container: {
+  popup: {
+    backgroundColor: '#ffffff',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    borderRadius: 16,
     width: 280,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 10,
+    elevation: 5,
   },
   icon: {
-    width: 64,
-    height: 64,
-    marginBottom: 16,
+    width: 56,
+    height: 56,
+    marginBottom: 20,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#000',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#555',
+    color: '#666',
     textAlign: 'center',
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: '#d42a1b',
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
   },
 });

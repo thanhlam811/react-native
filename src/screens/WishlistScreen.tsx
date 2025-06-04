@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,39 +9,39 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const mockData = [
-  {
-    id: '1',
-    title: 'The Great Gatsby',
-    description: 'A classic novel set in the Jazz Age.',
-    rating: 4.5,
-    price: '$12.99',
-    image: 'https://covers.openlibrary.org/b/id/7222246-L.jpg',
-  },
-  {
-    id: '2',
-    title: 'To Kill a Mockingbird',
-    description: 'A story of justice and racial tension in the South.',
-    rating: 4.8,
-    price: '$14.99',
-    image: 'https://covers.openlibrary.org/b/id/8228691-L.jpg',
-  },
-  {
-    id: '3',
-    title: '1984',
-    description: 'A dystopian novel by George Orwell.',
-    rating: 4.7,
-    price: '$10.50',
-    image: 'https://covers.openlibrary.org/b/id/153541-L.jpg',
-  },
-];
+import  {getFavouritebyUserId} from '../api/api'; // đường dẫn tới file API của bạn
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const WishlistScreen = () => {
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+
+  const userId = 1; // <-- giả lập, bạn có thể lấy từ AsyncStorage
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+          const user = await AsyncStorage.getItem('userId');
+          const userId = Number(user);
+          console.log('UserId:', userId);
+          const data = await getFavouritebyUserId(userId);
+          setFavorites(data);
+            // Lưu danh sách các ID yêu thích (nếu cần toggle)
+          const ids = data.map((item: any) => item.book?.id?.toString());
+          setFavoriteIds(ids);
+      } catch (err) {
+        console.error('Lỗi lấy userId từ AsyncStorage:', err);
+      }
+  
+
+
+    };
+
+    fetchFavorites();
+  }, []);
 
   const toggleFavorite = (id: string) => {
-    setFavorites((prev) =>
+    setFavoriteIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
@@ -54,32 +54,39 @@ const WishlistScreen = () => {
       </View>
 
       <FlatList
-        data={mockData}
-        keyExtractor={(item) => item.id}
+        data={favorites}
+      keyExtractor={(item, index) => item.favoriteId.toString()}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Image source={{ uri: item.image }} style={styles.image} />
+            <Image
+              source={{ uri: item.book?.image || 'https://via.placeholder.com/70x100' }}
+              style={styles.image}
+            />
 
             <View style={styles.info}>
               <Text style={styles.bookTitle} numberOfLines={1}>
-                {item.title}
+                {item.book?.title}
               </Text>
               <Text style={styles.description} numberOfLines={1}>
-                {item.description}
+                {item.book?.description || 'No description'}
               </Text>
 
               <View style={styles.ratingRow}>
                 <Icon name="star" color="#f5a623" size={18} />
-                <Text style={styles.ratingText}>{item.rating}</Text>
+                <Text style={styles.ratingText}>{item.book?.avgRate || 0}</Text>
               </View>
 
               <View style={styles.bottomRow}>
-                <Text style={styles.price}>{item.price}</Text>
-                <TouchableOpacity onPress={() => toggleFavorite(item.id)}>
+                <Text style={styles.price}>${item.book?.sellingPrice || '0.00'}</Text>
+                <TouchableOpacity onPress={() => toggleFavorite(item.book?.id?.toString())}>
                   <Icon
-                    name={favorites.includes(item.id) ? 'favorite' : 'favorite-border'}
-                    color={favorites.includes(item.id) ? '#e91e63' : '#aaa'}
+                    name={
+                      favoriteIds.includes(item.book?.id?.toString())
+                        ? 'favorite'
+                        : 'favorite-border'
+                    }
+                    color={favoriteIds.includes(item.book?.id?.toString()) ? '#e91e63' : '#aaa'}
                     size={24}
                   />
                 </TouchableOpacity>
@@ -93,6 +100,7 @@ const WishlistScreen = () => {
 };
 
 export default WishlistScreen;
+
 
 const styles = StyleSheet.create({
   container: {
