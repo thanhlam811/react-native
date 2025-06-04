@@ -5,7 +5,7 @@ export type AuthStackParamList = {
     Register: undefined;
     ForgotPassword: undefined;
     EnterCode: { email: string };  // Màn hình nhập mã code
-    SetNewPassword: undefined;  // Màn hình đặt lại mật khẩu mới
+    SetNewPassword: { email: string };  // Màn hình đặt lại mật khẩu mới
     HomeTabs: undefined;
   };
 

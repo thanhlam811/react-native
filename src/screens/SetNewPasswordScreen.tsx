@@ -10,27 +10,69 @@ import {
   ScrollView,
   Platform,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/types';
 import CustomButton from '../components/CustomButton';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { authApi } from '../api/api'; // nhớ import đúng đường dẫn
+import { showToast } from '../utils/toast'; // hàm hiển thị toast
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'SetNewPassword'>;
 
-const SetNewPasswordScreen: React.FC<Props> = ({ navigation }) => {
+const SetNewPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Nhận email và otp từ route params (nếu cần)
+  const { email } = route.params as { email: string};
 
   const handleBack = () => {
     navigation.goBack();
   };
 
-  const handleSetNewPassword = () => {
-    if (newPassword === confirmPassword) {
-      navigation.navigate('Login');
-    } else {
-      alert('Passwords do not match!');
+  const handleSetNewPassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      showToast('Vui lòng nhập đầy đủ mật khẩu');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      showToast('Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    // Ví dụ thêm validate password mạnh (có thể bổ sung thêm)
+    if (newPassword.length < 6) {
+      showToast('Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await authApi.changeForgotPassword(email, newPassword);
+      setLoading(false);
+
+      Alert.alert(
+        'Thành công',
+        'Mật khẩu của bạn đã được thay đổi. Vui lòng đăng nhập lại.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ]
+      );
+    } catch (error: any) {
+      setLoading(false);
+      const msg =
+        error.response?.data?.message ||
+        'Đổi mật khẩu thất bại. Vui lòng thử lại.';
+      showToast(msg);
+      console.log(msg);
+      
     }
   };
 
@@ -47,8 +89,10 @@ const SetNewPasswordScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
 
             <Text style={styles.title}>Set New Password</Text>
-            <Text style={styles.description}>Create a new password. Ensure it differs from
-            previous ones for security</Text>
+            <Text style={styles.description}>
+              Create a new password. Ensure it differs from previous ones for
+              security
+            </Text>
 
             <Text style={styles.label}>New Password</Text>
             <TextInput
@@ -57,6 +101,7 @@ const SetNewPasswordScreen: React.FC<Props> = ({ navigation }) => {
               onChangeText={setNewPassword}
               placeholder="Enter new password"
               secureTextEntry
+              autoCapitalize="none"
             />
 
             <Text style={styles.label}>Confirm Password</Text>
@@ -66,10 +111,15 @@ const SetNewPasswordScreen: React.FC<Props> = ({ navigation }) => {
               onChangeText={setConfirmPassword}
               placeholder="Confirm new password"
               secureTextEntry
+              autoCapitalize="none"
             />
 
             <View style={styles.buttonWrapper}>
-              <CustomButton title="SET NEW PASSWORD" onPress={handleSetNewPassword} />
+              <CustomButton
+                title={loading ? 'Loading...' : 'SET NEW PASSWORD'}
+                onPress={handleSetNewPassword}
+                disabled={loading}
+              />
             </View>
           </View>
         </ScrollView>

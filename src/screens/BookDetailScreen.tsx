@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,23 +7,63 @@ import {
   ScrollView,
   TouchableOpacity,
   ToastAndroid,
+  ActivityIndicator,
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { Book } from '../types/Book';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { cartDetailsApi } from '../api/api';
 
+
 type BookDetailRouteProp = RouteProp<{ params: { book: Book } }, 'params'>;
+
+type Feedback = {
+  feedbackId: number;
+  feedback: string;
+  rate: number;
+  createdAt: string;
+  user: {
+    userId: number;
+    avatar: string | null;
+    firstName: string;
+    lastName: string;
+  };
+};
 
 const BookDetailScreen = () => {
   const route = useRoute<BookDetailRouteProp>();
   const { book } = route.params;
   const navigation = useNavigation<any>();
 
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchFeedbacks = async () => {
+      setLoading(true);
+      try {
+        // Thay url nếu cần phù hợp môi trường phát triển
+        const response = await fetch(`http://10.0.2.2:8080/api/feedbacks?filter=book:${book.bookId}`);
+        const json = await response.json();
+        if (json.statusCode === 200 && json.data && json.data.data) {
+          setFeedbacks(json.data.data);
+        } else {
+          ToastAndroid.show('Failed to load feedbacks', ToastAndroid.SHORT);
+        }
+      } catch (error) {
+        ToastAndroid.show('Error fetching feedbacks', ToastAndroid.SHORT);
+        console.error('Fetch feedbacks error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFeedbacks();
+  }, [book.bookId]);
+
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.imageContainer}>
+   <View style={styles.imageContainer}>
           <Image
             source={{ uri: `http://10.0.2.2:8080/storage/upload/${book.image}` }}
             style={styles.image}
@@ -45,76 +85,55 @@ const BookDetailScreen = () => {
           <Text style={styles.originalPrice}>{book.listPrice || book.sellingPrice * 1.2}đ</Text>
         </View>
 
-        <View style={styles.ratingRow}>
-          <View style={styles.ratingStars}>
-            <Icon name="star" size={16} color="#FFD700" />
-            <Text style={styles.ratingText}>4.5</Text>
-          </View>
-          <Text style={styles.soldText}>Sold: 123</Text>
-        </View>
-
         <Text style={styles.sectionTitle}>Descriptions</Text>
-        <Text style={styles.description}>
-          {book.description || 'No description available.'}
-        </Text>
-          <Text style={styles.sectionTitle}>Ratings & Reviews</Text>
-        <View style={styles.reviewSummary}>
-          <View style={styles.reviewLeft}>
-            <Text style={styles.reviewScore}>4.7</Text>
-            <View style={styles.reviewStars}>
-              {[...Array(5)].map((_, i) => (
-                <Icon key={i} name="star" size={16} color={i < 4.7 ? '#FFD700' : '#ccc'} />
-              ))}
-            </View>
-            <Text style={styles.reviewCount}>109 Reviews</Text>
-          </View>
-          <View style={styles.reviewBars}>
-            {[5, 4, 3, 2, 1].map((star, idx) => (
-              <View key={star} style={styles.reviewBarRow}>
-                <Text style={styles.barLabel}>{star}</Text>
-                <View style={styles.barBackground}>
-                  <View style={[styles.barFill, { width: `${[80, 60, 20, 10, 5][idx]}%` }]} />
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
+        <Text style={styles.description}>{book.description || 'No description available.'}</Text>
 
-        {/* Một review mẫu */}
-        {[1, 2].map((_, index) => (
-          <View key={index} style={styles.reviewItem}>
-            <View style={styles.reviewHeader}>
-              <Image
-                source={{ uri: 'https://via.placeholder.com/40' }}
-                style={styles.avatar}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.userName}>User Name</Text>
-                <View style={{ flexDirection: 'row' }}>
-                  {[...Array(5)].map((_, i) => (
-                    <Icon key={i} name="star" size={16} color={i < 4 ? '#FFD700' : '#ccc'} />
-                  ))}
+        <Text style={styles.sectionTitle}>Ratings & Reviews</Text>
+
+        {loading ? (
+          <ActivityIndicator size="small" color="#000" />
+        ) : (
+          feedbacks.length === 0 ? (
+            <Text>No feedbacks available.</Text>
+          ) : (
+            feedbacks.map(fb => (
+              <View key={fb.feedbackId} style={styles.reviewItem}>
+                <View style={styles.reviewHeader}>
+                  <Image
+                    source={{
+                      uri: fb.user.avatar
+                        ? `http://10.0.2.2:8080/storage/upload/${fb.user.avatar}`
+                        : 'https://via.placeholder.com/40',
+                    }}
+                    style={styles.avatar}
+                  />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={styles.userName}>
+                      {fb.user.firstName} {fb.user.lastName}
+                    </Text>
+                    <View style={{ flexDirection: 'row' }}>
+                      {[...Array(5)].map((_, i) => (
+                        <Icon
+                          key={i}
+                          name="star"
+                          size={16}
+                          color={i < Math.round(fb.rate) ? '#FFD700' : '#ccc'}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                  <Text style={styles.reviewDate}>
+                    {new Date(fb.createdAt).toLocaleDateString()}
+                  </Text>
                 </View>
+                <Text style={styles.reviewText}>{fb.feedback}</Text>
               </View>
-              <Text style={styles.reviewDate}>1 Month ago</Text>
-            </View>
-            <Text style={styles.reviewText}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-            </Text>
-            <View style={styles.reviewImages}>
-              {[1, 2, 3].map(i => (
-                <Image
-                  key={i}
-                  source={{ uri: 'https://via.placeholder.com/80' }}
-                  style={styles.reviewImage}
-                />
-              ))}
-            </View>
-          </View>
-        ))}
+            ))
+          )
+        )}
       </ScrollView>
 
-      {/* Bottom Action Bar */}
+      {/* Bottom Action Bar (giữ nguyên như cũ) */}
       <View style={styles.bottomBar}>
         <View style={styles.leftIcons}>
           <TouchableOpacity style={styles.actionIcon}>
@@ -125,9 +144,9 @@ const BookDetailScreen = () => {
             style={styles.actionIcon}
             onPress={async () => {
               try {
-                await cartDetailsApi.addToCart(book.bookId, 1); // <-- gọi API thêm vào giỏ
+                await cartDetailsApi.addToCart(book.bookId, 1);
                 ToastAndroid.show('Added to cart!', ToastAndroid.SHORT);
-                navigation.navigate('Cart', { refresh: true }); 
+                navigation.navigate('Cart', { refresh: true });
               } catch (err) {
                 ToastAndroid.show('Add to cart failed', ToastAndroid.SHORT);
                 console.error('❌ Add to cart error:', err);
@@ -136,16 +155,12 @@ const BookDetailScreen = () => {
           >
             <Icon name="add-shopping-cart" size={24} color="#333" />
           </TouchableOpacity>
-
         </View>
 
-        {/* Buy Now button - dùng CustomButton sau */}
         <TouchableOpacity style={styles.buyNowButton} onPress={() => {}}>
           <Text style={styles.buyNowText}>BUY NOW</Text>
         </TouchableOpacity>
       </View>
-            
-
     </View>
   );
 };

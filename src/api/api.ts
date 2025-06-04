@@ -256,6 +256,26 @@ forgotPassword: async (email: string) => {
   });
   return response.data;
 },
+// api/authApi.ts
+verifyOtp: async (email: string, otp: string) => {
+  const response = await api1.post('/auth/verify-otp', null, {
+    params: { email, otp },
+  });
+  return response.data;
+},
+changeForgotPassword: async (email: string, newPassword: string) => {
+  const response = await api1.post(
+    '/auth/change-forgot-passwd',
+    { password: newPassword }, // body json chứa password mới
+    {
+      params: { email }, // email dưới dạng query param
+    }
+  );
+  return response.data;
+},
+
+
+
 // Helper xử lý response có cấu trúc lồn
 }
 
