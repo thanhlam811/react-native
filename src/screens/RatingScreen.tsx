@@ -1,183 +1,173 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  FlatList,
-  StyleSheet,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createFeedback } from '../api/api'; // đảm bảo đúng path
 
 const RatingScreen = () => {
+  const route = useRoute();
   const navigation = useNavigation();
-  const [rating, setRating] = useState(4.5);
-  const [review, setReview] = useState('');
-  const [images, setImages] = useState([
-    { id: '1', uri: 'https://via.placeholder.com/60' },
-    { id: '2', uri: 'https://via.placeholder.com/60' },
-  ]);
+  const { order } = route.params as any;
 
-  const handleAddImage = () => {
-    // TODO: Chọn ảnh từ thư viện
+  const [userId, setUserId] = useState<number | null>(null);
+
+  const [ratings, setRatings] = useState(() =>
+    order.details.map((detail: any) => ({
+      bookId: detail.book.bookId,
+      rate: 0,
+      feedback: '',
+    }))
+  );
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await AsyncStorage.getItem('userId');
+      if (id) setUserId(Number(id));
+    };
+    fetchUserId();
+  }, []);
+
+  const handleRatingChange = (index: number, rate: number) => {
+    const updated = [...ratings];
+    updated[index].rate = rate;
+    setRatings(updated);
   };
 
-  const renderStars = () => {
-    const fullStars = Math.floor(rating);
-    const halfStar = rating % 1 !== 0;
+  const handleFeedbackChange = (index: number, text: string) => {
+    const updated = [...ratings];
+    updated[index].feedback = text;
+    setRatings(updated);
+  };
 
-    return (
-      <View style={{ flexDirection: 'row', marginVertical: 12 }}>
-        {[...Array(fullStars)].map((_, i) => (
-          <Ionicons key={i} name="star" size={24} color="#FACC15" />
-        ))}
-        {halfStar && <Ionicons name="star-half" size={24} color="#FACC15" />}
-        {[...Array(5 - fullStars - (halfStar ? 1 : 0))].map((_, i) => (
-          <Ionicons key={i + 10} name="star-outline" size={24} color="#FACC15" />
-        ))}
-      </View>
-    );
+  const handleSubmit = async () => {
+    if (!userId) {
+      Alert.alert('Lỗi', 'Không tìm thấy userId');
+      return;
+    }
+
+    try {
+      for (let i = 0; i < ratings.length; i++) {
+        const r = ratings[i];
+        if (r.rate === 0 || !r.feedback.trim()) {
+          Alert.alert('Thông báo', 'Vui lòng đánh giá và nhập nhận xét cho tất cả sản phẩm.');
+          return;
+        }
+      }
+
+      for (const r of ratings) {
+        await createFeedback({
+          bookId: r.bookId,
+          userId: userId,
+          rate: r.rate,
+          feedback: r.feedback,
+        });
+      }
+
+      Alert.alert('Thành công', 'Đánh giá của bạn đã được gửi.');
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể gửi đánh giá.');
+      console.error(error);
+    }
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>Rate & review</Text>
-      </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.header}>Đánh giá đơn hàng #{order.orderId}</Text>
 
-      {/* Order Info */}
-      <Text style={styles.orderId}>Order ID: #O678AD3001</Text>
-      <View style={styles.bookCard}>
-        <Image
-          source={{ uri: 'https://upload.wikimedia.org/wikipedia/en/a/a9/Harry_Potter_and_the_Deathly_Hallows.jpg' }}
-          style={styles.bookImage}
-        />
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.bookTitle}>Harry Potter & the Deathly Hallows</Text>
-          <Text style={styles.bookPrice}>198.000 đ</Text>
-          <Text style={styles.bookQuantity}>Quantity: 2</Text>
+      {order.details.map((detail: any, index: number) => (
+        <View key={index} style={styles.card}>
+          <Image
+            source={{ uri: `http://10.0.2.2:8080/storage/upload/${detail.book.image}` }}
+            style={styles.image}
+          />
+          <View style={styles.info}>
+            <Text style={styles.title}>{detail.book.title}</Text>
+            <View style={styles.stars}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => handleRatingChange(index, star)}
+                >
+                  <Text style={{ fontSize: 24, color: star <= ratings[index].rate ? '#FFD700' : '#ccc' }}>
+                    ★
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput
+              placeholder="Nhập nhận xét..."
+              style={styles.input}
+              value={ratings[index].feedback}
+              onChangeText={(text) => handleFeedbackChange(index, text)}
+              multiline
+            />
+          </View>
         </View>
-      </View>
+      ))}
 
-      {/* Star Rating */}
-      {renderStars()}
-
-      {/* Review Text */}
-      <Text style={styles.label}>Review</Text>
-      <TextInput
-        value={review}
-        onChangeText={setReview}
-        multiline
-        numberOfLines={5}
-        style={styles.textArea}
-        placeholder="Write your review here..."
-      />
-
-      {/* Images */}
-      <View style={{ flexDirection: 'row', gap: 8, marginVertical: 16 }}>
-        {images.map((img) => (
-          <Image key={img.id} source={{ uri: img.uri }} style={styles.reviewImage} />
-        ))}
-        <TouchableOpacity style={styles.addImageBox} onPress={handleAddImage}>
-          <Ionicons name="add" size={24} color="#aaa" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Submit */}
-      <TouchableOpacity style={styles.submitButton}>
-        <Text style={styles.submitText}>SUBMIT</Text>
+      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+        <Text style={styles.submitText}>Gửi đánh giá</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
-export default RatingScreen;
-
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 16,
+    paddingBottom: 40,
     backgroundColor: '#fff',
   },
   header: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  card: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
+    marginBottom: 20,
+    backgroundColor: '#f2f2f2',
+    padding: 10,
+    borderRadius: 10,
   },
-  headerText: {
-    fontSize: 16,
-    fontWeight: '600',
+  image: {
+    width: 70,
+    height: 100,
+    borderRadius: 8,
+    marginRight: 12,
   },
-  orderId: {
-    fontWeight: '600',
+  info: {
+    flex: 1,
+  },
+  title: {
+    fontWeight: 'bold',
     marginBottom: 8,
   },
-  bookCard: {
+  stars: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    elevation: 2,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  bookImage: {
-    width: 60,
-    height: 90,
-    borderRadius: 6,
-  },
-  bookTitle: {
-    fontWeight: '600',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  bookPrice: {
-    color: '#D42A1B',
-    fontWeight: '600',
-  },
-  bookQuantity: {
-    color: '#666',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  label: {
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  textArea: {
-    borderWidth: 1,
+  input: {
     borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 8,
     textAlignVertical: 'top',
-  },
-  reviewImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-  },
-  addImageBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-    alignItems: 'center',
-    justifyContent: 'center',
+    height: 80,
+    backgroundColor: '#fff',
   },
   submitButton: {
-    backgroundColor: '#D42A1B',
+    backgroundColor: 'red',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
+    marginTop: 20,
   },
   submitText: {
-    color: '#fff',
+    color: 'white',
     fontWeight: 'bold',
   },
 });
+
+export default RatingScreen;

@@ -16,6 +16,7 @@ import { userApi,cartDetailsApi } from '../api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type CartItem = {
+  bookId:string;
   id: string;
   title: string;
   description: string;
@@ -98,6 +99,69 @@ const PaymentScreen = () => {
       </View>
     </View>
   );
+
+const handleCheckout = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const userIdStr = await AsyncStorage.getItem('userId');
+
+    if (!token || !userIdStr) {
+      Alert.alert('Lỗi', 'Không tìm thấy thông tin người dùng hoặc token');
+      return;
+    }
+
+    const userId = parseInt(userIdStr, 10);
+    const paymentId = 1;
+
+    const bookWithQuantityList = cartItems.map((item) => ({
+      bookId: parseInt(item.bookId, 10),
+      quantity: item.quantity,
+    }));
+
+    const voucherIds = selectedVoucher ? [selectedVoucher.voucher.voucherId] : [];
+
+    const requestBody = {
+      userId,
+      voucherIds,
+      bookWithQuantityList,
+      deliveryId: 1,
+      paymentId,
+    };
+    
+console.log('[Checkout] Body gửi lên API:', JSON.stringify(requestBody, null, 2)); 
+    const response = await fetch('http://10.0.2.2:8080/api/check-out', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const contentType = response.headers.get('Content-Type');
+    let responseBody;
+
+    if (contentType && contentType.includes('application/json')) {
+      responseBody = await response.json();
+    } else {
+      responseBody = await response.text();
+    }
+
+    if (response.ok) {
+      Alert.alert('Đặt hàng thành công', typeof responseBody === 'string' ? responseBody : responseBody.message || 'Thành công');
+      navigation.goBack();
+    } else {
+      const errorMessage = typeof responseBody === 'string' ? responseBody : responseBody.message || 'Vui lòng thử lại sau';
+      console.error('Checkout failed:', errorMessage);
+      Alert.alert('Lỗi đặt hàng', errorMessage);
+    }
+  } catch (error) {
+    console.error('Lỗi trong quá trình đặt hàng:', error);
+    Alert.alert('Lỗi', 'Không thể đặt hàng. Vui lòng thử lại sau.');
+  }
+};
+
+
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom']}>
@@ -217,19 +281,19 @@ const PaymentScreen = () => {
               <Text style={styles.totalText}>
                 Total: <Text style={styles.totalAmount}>${total.toFixed(2)}</Text>
               </Text>
-              <TouchableOpacity
-                style={styles.orderButton}
-                onPress={() => {
-                  if (!firstName || !lastName || !email || !phone || !address) {
-                    Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ thông tin giao hàng.');
-                  } else {
-                    Alert.alert('Đặt hàng thành công', 'Cảm ơn bạn đã mua hàng!');
-                    navigation.goBack();
-                  }
-                }}
-              >
-                <Text style={styles.orderText}>ORDER</Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+                  style={styles.orderButton}
+                  onPress={() => {
+                    if (!firstName || !lastName || !email || !phone || !address) {
+                      Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ thông tin giao hàng.');
+                    } else {
+                      handleCheckout();
+                    }
+                  }}
+                >
+                  <Text style={styles.orderText}>ORDER</Text>
+                </TouchableOpacity>
+
             </View>
           </View>
         }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import Popup from '../components/Popup'; // 🟢 Thêm dòng này
-
+import { userApi } from '../api/api';
 // Giả sử bạn có api logout
 import { authApi } from '../api/api'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,11 +19,30 @@ import { useAuth } from '../contexts/AuthContext'; // 🔥 import context
 
 const ProfileScreen = () => {
   const { logout } = useAuth();
-
+  const [avatar, setAvatar] = useState('');
+  const [fullName, setFullName] = useState('');
   const navigation = useNavigation<any>();
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
+ useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const userIdStr = await AsyncStorage.getItem('userId');
+        if (!userIdStr) return;
+        const userId = Number(userIdStr);
 
+        const userData = await userApi.getOne(userId);
+        console.log('User data:', userData);
+
+        setAvatar(userData.avatar || 'https://i.pravatar.cc/100');
+        setFullName(`${userData.firstName} ${userData.lastName}`);
+      } catch (err) {
+        console.error('Lỗi lấy thông tin người dùng:', err);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
   const showPopup = (message: string) => {
   setPopupMessage(message);
   setPopupVisible(true);
@@ -68,12 +87,11 @@ const ProfileScreen = () => {
       {/* Avatar và Tên */}
       <View style={styles.avatarSection}>
         <Image
-          source={{ uri: 'https://i.pravatar.cc/100' }}
+          source={{ uri: `http://10.0.2.2:8080/storage/upload/${avatar}`  }}
           style={styles.avatar}
         />
-        <Text style={styles.username}>John Doe</Text>
+        <Text style={styles.username}>{fullName}</Text>
       </View>
-
       <View style={styles.statusRow}>
         {[
           { label: 'To Confirm', icon: 'access-time', tabIndex: 0 },

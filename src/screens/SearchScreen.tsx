@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,41 +14,130 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { useRoute,RouteProp } from '@react-navigation/native';
 import { bookApi } from '../api/api'; // Đường dẫn đúng
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const previousSearches = [
   'Tôi thấy hoa vàng trên cỏ xanh',
   'Harry Potter and the Half Blood Prince',
   'The Lord of the rings',
   'Mắt Biếc',
 ];
+// Định nghĩa kiểu cho route params
+type SearchScreenRouteParams = {
+  filters?: any; // hoặc cụ thể hơn nếu biết rõ cấu trúc: filters?: { sort?: string; price?: string[]; ... }
+};
 
 const SearchScreen = () => {
+
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigation = useNavigation<any>();
+const [previousSearches, setPreviousSearches] = useState<string[]>([]);
+  const route = useRoute<RouteProp<Record<string, SearchScreenRouteParams>, string>>();
+  const filters = route.params?.filters || null;
 
-  const handleSearch = async () => {
-    if (search.trim() === '') {
-      setSearchResults([]);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await bookApi.search(search.trim());
-      setSearchResults(data);
-      Keyboard.dismiss();
-    } catch (err) {
-      setError('Lỗi khi tìm kiếm sách');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+  const loadHistory = async () => {
+    const saved = await AsyncStorage.getItem('SEARCH_HISTORY');
+    if (saved) {
+      setPreviousSearches(JSON.parse(saved));
     }
   };
+  loadHistory();
+}, []);
 
+// Lưu và cập nhật lịch sử tìm kiếm
+const saveSearchHistory = async (text: string) => {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+
+  const updated = [trimmed, ...previousSearches.filter((i) => i !== trimmed)].slice(0, 10);
+  setPreviousSearches(updated);
+  await AsyncStorage.setItem('SEARCH_HISTORY', JSON.stringify(updated));
+};
+
+// Xoá 1 item khỏi lịch sử
+const deleteHistoryItem = async (index: number) => {
+  const updated = [...previousSearches];
+  updated.splice(index, 1);
+  setPreviousSearches(updated);
+  await AsyncStorage.setItem('SEARCH_HISTORY', JSON.stringify(updated));
+};
+
+  const handleSearch = async () => {
+  const trimmedSearch = search.trim();
+  if (trimmedSearch === '') {
+    setSearchResults([]);
+    return;
+  }
+
+  setLoading(true);
+  setError(null);
+
+  try {
+    // Lưu vào lịch sử
+    await saveSearchHistory(trimmedSearch);
+
+    // Tạo filter query như bạn đã có
+    const filterParts: string[] = [];
+
+    if (trimmedSearch) {
+      filterParts.push(`title~'${trimmedSearch}'`);
+    }
+
+    if (filters?.price?.length) {
+      filterParts.push(filters.price);
+    }
+
+    if (filters?.rating?.length) {
+      const ratingQuery = filters.rating
+        .map((r: string) => {
+          if (r === '>4.0') return 'avgRate>4.0';
+          if (r === '3.0 - 4.0') return 'avgRate>=3.0 and avgRate<=4.0';
+          if (r === '2.0 - 3.0') return 'avgRate>=2.0 and avgRate<=3.0';
+          if (r === '<2.0') return 'avgRate<2.0';
+          return '';
+        })
+        .filter(Boolean)
+        .join(' or ');
+      if (ratingQuery) filterParts.push(`(${ratingQuery})`);
+    }
+
+    if (filters?.genre?.length) {
+      const genreQuery = filters.genre.map((g: string) => `genre='${g}'`).join(' or ');
+      if (genreQuery) filterParts.push(`(${genreQuery})`);
+    }
+
+    let query = '';
+    if (filterParts.length) {
+      query += `?filter=${encodeURIComponent(filterParts.join(' and '))}`;
+    }
+
+    if (filters?.sort) {
+      query += `${query ? '&' : '?'}${filters.sort}`;
+    }
+
+    console.log('query:', query);
+
+    const data = await bookApi.searchWithQuery(query);
+    setSearchResults(data);
+    Keyboard.dismiss();
+  } catch (err) {
+    setError('Lỗi khi tìm kiếm sách');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+useEffect(() => {
+  if (search.trim() !== '') {
+    handleSearch();
+  }
+}, [filters]);
   const renderBookItem = ({ item }: any) => (
     <View style={styles.bookItem}>
       <Image source={{ uri: item.image }} style={styles.bookImage} />
@@ -96,16 +185,27 @@ const SearchScreen = () => {
           </View>
         </View>
 
-        {/* Previous search */}
-        <Text style={styles.sectionTitle}>Tìm kiếm trước đó</Text>
-        {previousSearches.map((item, index) => (
-          <View key={index} style={styles.historyItem}>
-            <Text style={styles.historyText}>{item}</Text>
-            <TouchableOpacity>
-              <Ionicons name="close" size={16} color="#aaa" />
-            </TouchableOpacity>
-          </View>
-        ))}
+{previousSearches.length > 0 && (
+  <>
+    <Text style={styles.sectionTitle}>Tìm kiếm trước đó</Text>
+    {previousSearches.map((item, index) => (
+      <View key={index} style={styles.historyItem}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onPress={() => {
+            setSearch(item);
+            handleSearch();
+          }}
+        >
+          <Text style={styles.historyText}>{item}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => deleteHistoryItem(index)}>
+          <Ionicons name="close" size={16} color="#aaa" />
+        </TouchableOpacity>
+      </View>
+    ))}
+  </>
+)}
 
         {/* Search Results */}
         <Text style={styles.sectionTitle}>Kết quả tìm kiếm</Text>

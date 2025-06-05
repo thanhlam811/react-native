@@ -1,68 +1,80 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-
-const mockOrders = [
-  {
-    id: '#O678AD3001',
-    title: 'Harry Potter & the Deathly Hallows',
-    price: '198.000 đ',
-    quantity: 2,
-    deliveryDate: 'Sunday, Apr 21, 2025',
-    image: 'https://m.media-amazon.com/images/I/81iqZ2HHD-L._SL1500_.jpg',
-  },
-  {
-    id: '#O678AD3002',
-    title: 'Harry Potter & the Deathly Hallows',
-    price: '198.000 đ',
-    quantity: 1,
-    deliveryDate: 'Sunday, Apr 21, 2025',
-    image: 'https://m.media-amazon.com/images/I/81iqZ2HHD-L._SL1500_.jpg',
-  },
-  {
-    id: '#O678AD3003',
-    title: 'Harry Potter & the Deathly Hallows',
-    price: '198.000 đ',
-    quantity: 3,
-    deliveryDate: 'Sunday, Apr 21, 2025',
-    image: 'https://m.media-amazon.com/images/I/81iqZ2HHD-L._SL1500_.jpg',
-  },
-];
-
+import React, { useEffect, useState } from 'react';
+import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getOrderbyUserIdRating,getOrderDetailsByOrderId } from '../api/api'; // chỉnh lại path cho đúng
+import { useNavigation } from '@react-navigation/native';
 const Rating = () => {
+const [orders, setOrders] = useState<any[]>([]);
+
+  const [loading, setLoading] = useState(true);
+ const navigation = useNavigation<any>();
+
+  const fetchOrders = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) return;
+
+      const orderList = await getOrderbyUserIdRating(Number(userId));
+      setOrders(orderList);
+    } catch (error) {
+      console.error('Lỗi khi load đơn hàng:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
   const renderOrder = ({ item }: any) => (
-    <View style={styles.orderContainer}>
-      <Text style={styles.orderId}>Order ID: {item.id}</Text>
-      <View style={styles.card}>
-        <Image source={{ uri: item.image }} style={styles.image} />
+  <View style={styles.orderContainer}>
+    <Text style={styles.orderId}>Order ID: {item.orderId}</Text>
+
+    {item.details.map((detail: any, index: number) => (
+      <View style={styles.card} key={index}>
+ <Image source={{ uri: `http://10.0.2.2:8080/storage/upload/${detail.book.image}`  }} style={styles.image} />
         <View style={styles.details}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.price}>{item.price}</Text>
-          <Text style={styles.quantity}>Quantity: {item.quantity}</Text>
+          <Text style={styles.title}>{detail.book.title}</Text>
+          <Text style={styles.price}>{detail.book?.sellingPrice?.toLocaleString()} đ</Text>
+          <Text style={styles.quantity}>Quantity: {detail.quantity}</Text>
         </View>
       </View>
-      <Text style={styles.deliveryText}>Expected Delivery by {item.deliveryDate}</Text>
+    ))}
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.viewButton}>
-          <Text style={styles.viewButtonText}>View Order</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.cancelButton}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
+    <Text style={styles.deliveryText}>
+      Expected Delivery: {item.expectedDeliveryDate || 'Updating'}
+    </Text>
+
+    <View style={styles.buttonRow}>
+      <TouchableOpacity style={styles.viewButton}  onPress={() => navigation.navigate('OrderInformationScreen', { order: item })}>
+        <Text style={styles.viewButtonText}>View Order</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.RatingButton}
+        onPress={() => navigation.navigate('RatingScreen', { order: item })}
+      >
+        <Text style={styles.RatingButtonText}>Write & Review</Text>
+      </TouchableOpacity>
+
     </View>
-  );
+  </View>
+);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="red" style={{ marginTop: 50 }} />;
+  }
 
   return (
     <FlatList
-      data={mockOrders}
+      data={orders}
       renderItem={renderOrder}
-      keyExtractor={(item) => item.id}
+      keyExtractor={(item: any) => item?.order?.orderId.toString()}
       contentContainerStyle={styles.listContainer}
+      ListEmptyComponent={<Text>Không có đơn hàng.</Text>}
     />
   );
 };
-
 const styles = StyleSheet.create({
   listContainer: {
     padding: 16,
@@ -127,14 +139,14 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  cancelButton: {
+  RatingButton: {
     borderColor: 'red',
     borderWidth: 1,
     paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 6,
   },
-  cancelButtonText: {
+  RatingButtonText: {
     color: 'red',
     fontWeight: 'bold',
   },

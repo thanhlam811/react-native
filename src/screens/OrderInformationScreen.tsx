@@ -26,7 +26,7 @@ const total: number = itemTotal - discount + deliveryCharge;
 
 {order.details?.map((detail: any, index: number) => (
   <View key={index} style={styles.productCard}>
-    <Image source={{ uri: detail.book.imageUrl }} style={styles.image} />
+ <Image source={{ uri: `http://10.0.2.2:8080/storage/upload/${detail.book.image}`  }} style={styles.image} />
     <View>
       <Text style={styles.title}>{detail.book.title}</Text>
       <Text style={styles.price}>{detail.book.sellingPrice?.toLocaleString()}đ</Text>

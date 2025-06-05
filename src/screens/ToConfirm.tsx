@@ -33,7 +33,7 @@ const [orders, setOrders] = useState<any[]>([]);
 
     {item.details.map((detail: any, index: number) => (
       <View style={styles.card} key={index}>
-        <Image source={{ uri: detail.book.imageUrl }} style={styles.image} />
+ <Image source={{ uri: `http://10.0.2.2:8080/storage/upload/${detail.book.image}`  }} style={styles.image} />
         <View style={styles.details}>
           <Text style={styles.title}>{detail.book.title}</Text>
           <Text style={styles.price}>{detail.book?.sellingPrice?.toLocaleString()} đ</Text>
@@ -71,7 +71,6 @@ const [orders, setOrders] = useState<any[]>([]);
     />
   );
 };
-
 const styles = StyleSheet.create({
   listContainer: {
     padding: 16,

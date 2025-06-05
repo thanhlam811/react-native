@@ -60,12 +60,23 @@ search: async (keyword: string) => {
 
     return books;
   },
-    filterBooks: async (filters: string) => {
-    // ví dụ filter chuỗi query: 'price>100000;rating>4'
-    const res = await api.get(`/books?filter=${encodeURIComponent(filters)}`);
-    return extractData(res);
-  },
-};
+searchWithQuery: async (query: string) => {
+  const res = await fetch(`http://10.0.2.2:8080/api/books${query}`);
+  const json = await res.json();
+  
+  const books = json.data.data.map((book: any) => ({
+    id: book.bookId,
+    title: book.title,
+    price: book.sellingPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }),
+    rating: book.avgRate.toFixed(1),
+    sold: Math.floor(Math.random() * 100),
+    image: book.listOfImage.length > 0 ? book.listOfImage[0].path : 'https://via.placeholder.com/150',
+  }));
+  console.log(books);
+  
+  return books;
+}
+}
 
 export const userApi = {
   getAll: async (page = 1, size = 5) =>
@@ -96,7 +107,86 @@ export const getOrderDetailsByOrderId = async (orderId: number) => {
     return [];
   }
 };
+export const getOrderbyUserIdRating = async (userId: number) => {
+  try {
+    const res = await axios.get(
+      `http://10.0.2.2:8080/api/orders?filter=user:${userId}`
+    );
 
+    const Orderlist = res.data.data.data;
+
+    // Lọc ra các đơn hàng có status là null, undefined hoặc chuỗi rỗng
+    const filteredOrders = Orderlist.filter(
+      (order: any) =>
+        order.status === null || order.status === undefined || order.status === ''
+    );
+
+    // Lấy chi tiết từng đơn hàng đã lọc
+    const detailedOrders = await Promise.all(
+      filteredOrders.map(async (order: any) => {
+        const details = await getOrderDetailsByOrderId(order.orderId);
+        return {
+          ...order,
+          details,
+        };
+      })
+    );
+
+    return detailedOrders;
+  } catch (error) {
+    console.error('Lỗi lấy dữ liệu orderlist:', error);
+    return [];
+  }
+};
+
+export const getOrderbyUserIdProcessing = async (userId: number) => {
+  try {
+    const res = await axios.get(
+      `http://10.0.2.2:8080/api/orders?filter=user:${userId}&filter=status:'PROCESSING'`
+    );
+    const Orderlist = res.data.data.data;
+
+    // Lấy chi tiết từng đơn hàng
+    const detailedOrders = await Promise.all(
+      Orderlist.map(async (order: any) => {
+        const details = await getOrderDetailsByOrderId(order.orderId);
+        return {
+          ...order,
+          details,
+        };
+      })
+    );
+
+    return detailedOrders;
+  } catch (error) {
+    console.error('Lỗi lấy dữ liệu orderlist:', error);
+    return [];
+  }
+};
+export const getOrderbyUserIdDELIVERED = async (userId: number) => {
+  try {
+    const res = await axios.get(
+      `http://10.0.2.2:8080/api/orders?filter=user:${userId}&filter=status:'DELIVERED'`
+    );
+    const Orderlist = res.data.data.data;
+
+    // Lấy chi tiết từng đơn hàng
+    const detailedOrders = await Promise.all(
+      Orderlist.map(async (order: any) => {
+        const details = await getOrderDetailsByOrderId(order.orderId);
+        return {
+          ...order,
+          details,
+        };
+      })
+    );
+
+    return detailedOrders;
+  } catch (error) {
+    console.error('Lỗi lấy dữ liệu orderlist:', error);
+    return [];
+  }
+};
 export const getOrderbyUserId = async (userId: number) => {
   try {
     const res = await axios.get(
@@ -122,6 +212,26 @@ export const getOrderbyUserId = async (userId: number) => {
   }
 };
 
+export interface CreateFeedbackRequest {
+  feedback: string;
+  rate: number;
+  bookId: number;
+  userId: number;
+}
+export const createFeedback = async (data: CreateFeedbackRequest) => {
+  try {
+    const res = await axios.post('http://10.0.2.2:8080/api/feedbacks', {
+      feedback: data.feedback,
+      rate: data.rate,
+      book: { bookId: data.bookId },
+      user: { userId: data.userId },
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Failed to create feedback', error);
+    throw error;
+  }
+};
 export const feedbackApi = {
   getAll: async (page = 1) => extractData(await api.get(`/feedbacks?page=${page}`)),
   getOne: async (id: number) => (await api.get(`/feedbacks/${id}`)).data.data,
@@ -149,6 +259,31 @@ export const getFavouritebyUserId = async (userId: number) => {
   } catch (error) {
     console.error('Lỗi lấy dữ liệu favorites:', error);
     return [];
+  }
+};
+
+export const getFavouritebyUserIdandBookId = async (userId: number,bookId:number) => {
+  try {
+    const res = await axios.get(`http://10.0.2.2:8080/api/favorites?filter=user:${userId} and book:${bookId}`);
+    const favoriteList = res.data.data.data; 
+    console.log("favoriteList ne",favoriteList);
+    // <--- data thực nằm ở đây
+    return favoriteList;
+  } catch (error) {
+    console.error('Lỗi lấy dữ liệu favorites:', error);
+    return [];
+  }
+};
+
+
+export const removeFavoritebyUserIdandBookId  = async (favoriteId: number) => {
+  try {
+    const res = await axios.delete(`http://10.0.2.2:8080/api/favorites/${favoriteId}`);
+    console.log('Xóa favorite thành công:', favoriteId);
+    return true;
+  } catch (error) {
+    console.error('Lỗi khi xóa favorite:', error);
+    return false;
   }
 };
 export const removeFavorite = async (favoriteId: number) => {
@@ -250,6 +385,35 @@ getAccount: async () => {
     throw error; // vẫn throw để component xử lý Alert hoặc logic khác
   }
 },
+updateAccount: async (updatedData: {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  avatar: string;
+}) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) throw new Error('No token found');
+
+    const response = await api1.put('auth/account', updatedData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('✅ Account updated:', response.data);
+    return response.data.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.log('❌ Update failed:', error.response.data);
+    } else {
+      console.log('❌ Error:', error.message);
+    }
+    throw error;
+  }
+},
+
 forgotPassword: async (email: string) => {
   const response = await api1.post('/auth/forgot-passwd', null, {
     params: { email },
@@ -316,7 +480,9 @@ const post = async (url: string, data: any) => {
     throw error;
   }
 };
-
+export const del = async (url: string) => {
+  return await axios.delete(url);
+};
 export const cartDetailsApi = {
   getByUserId: async (userId: number) => {
     const res = await get(`http://10.0.2.2:8080/api/cart-details?filter=cart:${userId}`);
@@ -341,4 +507,9 @@ export const cartDetailsApi = {
   }); 
   return res.data.data; // <--- data nằm trong res.data.data.data
 },
+
+  deleteCartDetailsById: async (id: number) => {
+    return await axios.delete(`http://10.0.2.2:8080/api/cart-details/${id}`);
+  },
+
 };

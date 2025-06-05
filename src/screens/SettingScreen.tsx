@@ -39,10 +39,10 @@ export default function SettingScreen() {
       </View>
 
       {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      {/* <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Icon name="logout" size={20} color="#fff" />
         <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 }

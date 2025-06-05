@@ -5,10 +5,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { bookApi } from '../api/api'; // giả sử bạn đã có api tương tự
+import { MaterialIcons } from '@expo/vector-icons'; // Hoặc 'react-native-vector-icons/MaterialIcons'
+import { useNavigation } from '@react-navigation/native'; // thêm nếu chưa có
+
 
 const CustomButton = ({ title, onPress }: { title: string; onPress: () => void }) => (
   <TouchableOpacity style={styles.button} onPress={onPress}>
@@ -18,8 +18,16 @@ const CustomButton = ({ title, onPress }: { title: string; onPress: () => void }
 
 const TABS = ['Sort', 'Price', 'Rating', 'Genre'] as const;
 type TabType = typeof TABS[number];
+const sortMap: Record<string, string> = {
+  'New releases': 'sort=createdAt,desc',
+  'Highest Rating': 'sort=avgRate,desc',
+  'Lowest Rating': 'sort=avgRate,asc',
+  'Highest Price': 'sort=sellingPrice,desc',
+  'Lowest Price': 'sort=sellingPrice,asc',
+};
 
 export default function FilterScreen() {
+  const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<TabType>('Sort');
   const [sortOption, setSortOption] = useState('');
   const [priceOptions, setPriceOptions] = useState<string[]>([]);
@@ -53,120 +61,6 @@ export default function FilterScreen() {
       <View style={styles.separator} />
     </View>
   );
-
-  // Hàm chuyển sortOption thành query sort API (ví dụ)
-  const mapSortOptionToApi = (option: string) => {
-    switch (option) {
-      case 'New releases':
-        return 'sort=releaseDate,desc';
-      case 'Highest Rating':
-        return 'sort=rating,desc';
-      case 'Lowest Rating':
-        return 'sort=rating,asc';
-      case 'Highest Price':
-        return 'sort=price,desc';
-      case 'Lowest Price':
-        return 'sort=price,asc';
-      default:
-        return '';
-    }
-  };
-
-  // Hàm build filter query string cho price/rating/genre
-  const buildFilterQuery = () => {
-   let filters: string[] = [];
-
-    // Price filter, ví dụ: price>=0 and price<=100000
-    priceOptions.forEach((price) => {
-      switch (price) {
-        case '0-100.000VNĐ':
-          filters.push('(price>=0 and price<=100000)');
-          break;
-        case '100.000-300.000VNĐ':
-          filters.push('(price>100000 and price<=300000)');
-          break;
-        case '300.000-500.000VNĐ':
-          filters.push('(price>300000 and price<=500000)');
-          break;
-        case '>500.000VNĐ':
-          filters.push('(price>500000)');
-          break;
-      }
-    });
-
-    // Rating filter, ví dụ: rating>4 or (rating>=3 and rating<=4)
-    ratingOptions.forEach((rating) => {
-      switch (rating) {
-        case '>4.0':
-          filters.push('(rating>4)');
-          break;
-        case '3.0 - 4.0':
-          filters.push('(rating>=3 and rating<=4)');
-          break;
-        case '2.0 - 3.0':
-          filters.push('(rating>=2 and rating<=3)');
-          break;
-        case '<2.0':
-          filters.push('(rating<2)');
-          break;
-      }
-    });
-
-    // Genre filter, ví dụ genre='Fantasy'
-    genreOptions.forEach((genre) => {
-      filters.push(`(genre='${genre}')`);
-    });
-
-    // Nối các filter lại với or giữa các option trong cùng nhóm và and giữa nhóm
-    // Ví dụ: (price filters) and (rating filters) and (genre filters)
-    // Nếu có nhiều option trong cùng nhóm thì nối bằng or, nhóm khác nối bằng and
-
-    // Các nhóm filter sẽ là một mảng chứa string or...
-    const groupedFilters = [];
-
-    // Price
-    if (priceOptions.length > 0) {
-      groupedFilters.push(`(${filters.filter(f => f.includes('price')).join(' or ')})`);
-    }
-
-    // Rating
-    if (ratingOptions.length > 0) {
-      groupedFilters.push(`(${filters.filter(f => f.includes('rating')).join(' or ')})`);
-    }
-
-    // Genre
-    if (genreOptions.length > 0) {
-      groupedFilters.push(`(${filters.filter(f => f.includes('genre')).join(' or ')})`);
-    }
-
-    return groupedFilters.join(' and ');
-  };
-
-  const handleApply = async () => {
-    try {
-      let filterQuery = buildFilterQuery(); // vd: (price=...) and (rating=...) and (genre=...)
-      const sortQuery = mapSortOptionToApi(sortOption);
-
-      // Kết hợp filter và sort thành query param
-      let query = '';
-      if (filterQuery) query += `filter=${encodeURIComponent(filterQuery)}`;
-      if (sortQuery) query += (query ? '&' : '') + sortQuery;
-
-      console.log('Final query:', query);
-
-      // Gọi API filter sách
-      // Giả sử bookApi.filterBooks nhận param query string:
-      const data = await bookApi.filterBooks(query);
-      console.log('Filtered books:', data);
-
-      Alert.alert('Filter', `Tìm thấy ${data.length} cuốn sách`);
-
-      // Ở đây bạn có thể chuyển dữ liệu về màn hình kết quả hoặc cập nhật state ở màn hình cha
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Có lỗi khi lọc sách');
-    }
-  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -211,6 +105,41 @@ export default function FilterScreen() {
         );
     }
   };
+const getPriceFilterQuery = () => {
+  const queries: string[] = [];
+
+  priceOptions.forEach((priceRange) => {
+    switch (priceRange) {
+      case '0-100.000VNĐ':
+        queries.push('sellingPrice<101');
+        break;
+      case '100.000-300.000VNĐ':
+        queries.push('sellingPrice>100 and sellingPrice<301');
+        break;
+      case '300.000-500.000VNĐ':
+        queries.push('sellingPrice>300 and sellingPrice<500');
+        break;
+      case '>500.000VNĐ':
+        queries.push('sellingPrice>500');
+        break;
+    }
+  });
+
+  return queries.join('and'); // nối bằng dấu phẩy để backend hiểu là AND
+};
+
+const handleApply = () => {
+  const sortQuery = sortMap[sortOption];
+  const priceFilter = getPriceFilterQuery();
+  const filters = {
+    sort: sortQuery, // VD: "sort=avgRate,desc"
+    price: priceFilter,
+    rating: ratingOptions,
+    genre: genreOptions,
+  };
+    console.log(filters)
+  navigation.navigate('Search', { filters }); // 👈 Truyền sang SearchScreen
+};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

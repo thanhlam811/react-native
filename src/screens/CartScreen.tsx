@@ -15,28 +15,26 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { RectButton } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '../contexts/AuthContext';
 
-import  {cartDetailsApi} from '../api/api'; // giả sử bạn đã export api này đúng
+import { cartDetailsApi } from '../api/api'; // giả sử bạn đã export api này đúng
 
 const CartScreen = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false); // trạng thái pull-to-refresh
 
   const navigation = useNavigation<any>();
-useEffect(() => {
+
   const fetchCartDetails = async () => {
     setLoading(true);
     setError(null);
     try {
       const user = await AsyncStorage.getItem('userId');
       const userId = Number(user);
-      console.log('UserId:', userId);
       if (!userId) throw new Error('No userId');
 
       const cartDetails = await cartDetailsApi.getByUserId(userId);
-      console.log('cartDetails:', cartDetails);
 
       const formatted = cartDetails.map((item: any) => ({
         id: item.cartDetailsId.toString(),
@@ -45,7 +43,7 @@ useEffect(() => {
         description: item.book?.description || '',
         price: item.book?.sellingPrice || 0,
         image: item.book?.image
-          ? `http://10.0.2.2:8080/images/${item.book.image}`
+          ? `http://10.0.2.2:8080/storage/upload/${item.book?.image}`
           : 'https://via.placeholder.com/70x100',
         quantity: item.quantity || 1,
         selected: true,
@@ -57,46 +55,40 @@ useEffect(() => {
       console.error(err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  fetchCartDetails();
-}, []);
+  useEffect(() => {
+    fetchCartDetails();
+  }, []);
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchCartDetails();
+  };
 
-  // các hàm xử lý tăng giảm số lượng, xóa, chọn, etc vẫn giữ nguyên
-const updateQuantity = async (id: string, type: 'inc' | 'dec') => {
-  const targetItem = cartItems.find((item) => item.id === id);
-  if (!targetItem) return;
+  const updateQuantity = async (id: string, type: 'inc' | 'dec') => {
+    const targetItem = cartItems.find((item) => item.id === id);
+    if (!targetItem) return;
 
-  const delta = type === 'inc' ? 1 : -1;
-  const newQuantity = targetItem.quantity + delta;
+    const delta = type === 'inc' ? 1 : -1;
+    const newQuantity = targetItem.quantity + delta;
 
-  if (newQuantity < 1) return;
+    if (newQuantity < 1) return;
 
-  console.log(`[CartScreen] Updating quantity:`, {
-    bookId: targetItem.bookId,
-    delta,
-    oldQuantity: targetItem.quantity,
-    newQuantity,
-  });
+    try {
+      await cartDetailsApi.addToCart(targetItem.bookId, delta);
 
-  try {
-    await cartDetailsApi.addToCart(targetItem.bookId, delta);
-
-    console.log(`[CartScreen] API call success`);
-
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  } catch (error) {
-    console.error('[CartScreen] Failed to update quantity:', error);
-  }
-};
-
-
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, quantity: newQuantity } : item
+        )
+      );
+    } catch (error) {
+      console.error('[CartScreen] Failed to update quantity:', error);
+    }
+  };
 
   const toggleSelect = (id: string) => {
     setCartItems((prev) =>
@@ -105,10 +97,17 @@ const updateQuantity = async (id: string, type: 'inc' | 'dec') => {
       )
     );
   };
-
-  const deleteItem = (id: string) => {
+const deleteItem = async (id: string) => {
+  try {
+    await cartDetailsApi.deleteCartDetailsById(Number(id));
     setCartItems((prev) => prev.filter((item) => item.id !== id));
-  };
+  } catch (error) {
+    console.error('[CartScreen] Failed to delete cart item:', error);
+    setError('Failed to delete item. Please try again.');
+  }
+};
+
+
 
   const renderRightActions = (
     progress: Animated.AnimatedInterpolation<number>,
@@ -136,20 +135,20 @@ const updateQuantity = async (id: string, type: 'inc' | 'dec') => {
     .toFixed(2);
 
   const goToPayment = () => {
-    const selectedItems = cartItems.filter(item => item.selected);
-    console.log('[CartScreen] Selected Items:', selectedItems); // log kiểm tra
+    const selectedItems = cartItems.filter((item) => item.selected);
     navigation.navigate('Payment', { selectedItems });
   };
-
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Cart</Text>
-        <Icon name="search" size={24} color="#000" />
+        {/* <Icon name="search" size={24} color="#000" /> */}
       </View>
 
-      {loading && <ActivityIndicator size="large" color="#d42b1c" />}
+      {loading && !refreshing && (
+        <ActivityIndicator size="large" color="#d42b1c" />
+      )}
       {error && (
         <Text style={{ color: 'red', textAlign: 'center', marginVertical: 8 }}>
           {error}
@@ -213,6 +212,8 @@ const updateQuantity = async (id: string, type: 'inc' | 'dec') => {
             </View>
           </Swipeable>
         )}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
 
       <View style={styles.footer}>
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#d42a1b',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 20
   },
   payText: {
     color: '#fff',

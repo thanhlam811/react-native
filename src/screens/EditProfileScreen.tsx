@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Image } from 'react-native';
 import CustomButton from '../components/CustomButton';
-import { authApi } from '../api/api';
+import { authApi } from '../api/api'; // bỏ `userApi` vì không dùng nữa
 
 const EditProfileScreen = () => {
   const [firstName, setFirstName] = useState('');
@@ -11,7 +11,6 @@ const EditProfileScreen = () => {
   const [phone, setPhone] = useState('');
   const [avatar, setAvatar] = useState('');
 
-  // Gọi API để lấy thông tin người dùng khi mở màn hình
   useEffect(() => {
     const loadProfile = async () => {
       try {
@@ -31,34 +30,52 @@ const EditProfileScreen = () => {
     loadProfile();
   }, []);
 
+ const handleUpdate = async () => {
+  try {
+    const updatedUser = {
+      firstName,
+      lastName,
+      phoneNumber: phone,
+      avatar,
+    };
+
+    await authApi.updateAccount(updatedUser);
+
+    Alert.alert('Success', 'Profile updated successfully!');
+  } catch (error) {
+    console.error('❌ Failed to update profile:', error);
+    Alert.alert('Error', 'Failed to update profile. Please try again.');
+  }
+};
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.avatarSection}>
         <Image
-          source={{ uri: avatar || 'https://i.pravatar.cc/100' }}
+          source={{ uri: `http://10.0.2.2:8080/storage/upload/${avatar}`  || 'https://i.pravatar.cc/100' }}
           style={styles.avatar}
         />
       </View>
 
       <View style={styles.form}>
         <Text style={styles.label}>First Name</Text>
-        <TextInput style={styles.input} value={firstName} editable={false} />
+        <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} />
 
         <Text style={styles.label}>Last Name</Text>
-        <TextInput style={styles.input} value={lastName} editable={false} />
+        <TextInput style={styles.input} value={lastName} onChangeText={setLastName} />
 
         <Text style={styles.label}>Username</Text>
         <TextInput style={styles.input} value={username} editable={false} />
 
         <Text style={styles.label}>Email</Text>
-        <TextInput style={styles.input} value={email} editable={false} />
+        <TextInput style={styles.input} value={email} onChangeText={setEmail} />
 
         <Text style={styles.label}>Phone Number</Text>
-        <TextInput style={styles.input} value={phone} editable={false} />
+        <TextInput style={styles.input} value={phone} onChangeText={setPhone} />
       </View>
 
       <View style={styles.buttonWrapper}>
-        <CustomButton title="UPDATE" onPress={() => {}}  />
+        <CustomButton title="UPDATE" onPress={handleUpdate} />
       </View>
     </ScrollView>
   );
@@ -96,7 +113,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#fff',
     color: '#000',
   },
   buttonWrapper: {
