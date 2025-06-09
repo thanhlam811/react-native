@@ -68,10 +68,17 @@ const EditProfileScreen = () => {
         <TextInput style={styles.input} value={username} editable={false} />
 
         <Text style={styles.label}>Email</Text>
-        <TextInput style={styles.input} value={email} onChangeText={setEmail} />
+        <TextInput style={styles.input} value={email} onChangeText={setEmail} editable={false} />
 
         <Text style={styles.label}>Phone Number</Text>
-        <TextInput style={styles.input} value={phone} onChangeText={setPhone} />
+       <TextInput
+        style={styles.input}
+        value={phone}
+        onChangeText={setPhone}
+        keyboardType="numeric" // hoặc "phone-pad"
+        maxLength={10} // tùy bạn muốn giới hạn độ dài hay không
+      />
+
       </View>
 
       <View style={styles.buttonWrapper}>

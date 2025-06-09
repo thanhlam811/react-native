@@ -140,12 +140,12 @@ useEffect(() => {
 }, [filters]);
   const renderBookItem = ({ item }: any) => (
     <View style={styles.bookItem}>
-      <Image source={{ uri: item.image }} style={styles.bookImage} />
+      <Image source={{ uri:`http://10.0.2.2:8080/storage/upload/${item.image}`}} style={styles.bookImage} />
       <Text style={styles.bookTitle} numberOfLines={2}>{item.title}</Text>
       <Text style={styles.bookPrice}>{item.price}</Text>
       <View style={styles.bookInfo}>
         <Text style={styles.bookRating}>⭐ {item.rating}</Text>
-        <Text style={styles.bookSold}>Đã bán {item.sold}k</Text>
+        <Text style={styles.bookSold}>Sold {item.sold}k</Text>
       </View>
     </View>
   );
@@ -187,7 +187,7 @@ useEffect(() => {
 
 {previousSearches.length > 0 && (
   <>
-    <Text style={styles.sectionTitle}>Tìm kiếm trước đó</Text>
+    <Text style={styles.sectionTitle}>Previous search</Text>
     {previousSearches.map((item, index) => (
       <View key={index} style={styles.historyItem}>
         <TouchableOpacity
@@ -208,7 +208,7 @@ useEffect(() => {
 )}
 
         {/* Search Results */}
-        <Text style={styles.sectionTitle}>Kết quả tìm kiếm</Text>
+        <Text style={styles.sectionTitle}>Search results</Text>
         {loading && <ActivityIndicator size="small" color="#d42a1b" />}
         {error && <Text style={{ color: 'red' }}>{error}</Text>}
 
@@ -284,11 +284,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   bookImage: {
-    width: '100%',
-    height: 160,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
+      width: '100%',
+      aspectRatio: 2 / 3,
+      borderRadius: 8,
+      marginBottom: 8,
+      resizeMode: 'cover',
+    },
   bookTitle: {
     fontSize: 13,
     fontWeight: '500',

@@ -297,6 +297,17 @@ export const removeFavorite = async (favoriteId: number) => {
   }
 };
 
+export const cancelOrderById = async (orderId: number) => {
+  const token = await AsyncStorage.getItem('token'); // lấy token từ AsyncStorage
+
+  const response = await axios.delete(`http://10.0.2.2:8080/api/orders/${orderId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.data;
+};
 export const genreApi = {
   getAll: async (page = 1) => extractData(await api.get(`/genres?page=${page}`)),
   getOne: async (id: number) => (await api.get(`/genres/${id}`)).data.data,

@@ -92,7 +92,7 @@
           </View>
 
           {/* Genres */}
-          <View style={styles.sectionHeader}>
+          {/* <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Explore by Genre</Text>
             <Text style={styles.seeAll}>See all</Text>
           </View>
@@ -103,7 +103,7 @@
                 <Text>{genre.name}</Text>
               </View>
             ))}
-          </ScrollView>
+          </ScrollView> */}
 
           {/* Recommended Section */}
           <View style={styles.sectionHeader}>

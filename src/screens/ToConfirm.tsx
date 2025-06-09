@@ -3,7 +3,10 @@ import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, ActivityIndi
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getOrderbyUserId,getOrderDetailsByOrderId } from '../api/api'; // chỉnh lại path cho đúng
 import { useNavigation } from '@react-navigation/native';
+import { cancelOrderById } from '../api/api';
+import { Alert } from 'react-native';
 const ToConfirm = () => {
+
 const [orders, setOrders] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -26,6 +29,27 @@ const [orders, setOrders] = useState<any[]>([]);
   useEffect(() => {
     fetchOrders();
   }, []);
+const handleCancelOrder = (orderId: number) => {
+  Alert.alert(
+    'Xác nhận hủy đơn',
+    'Bạn có chắc muốn hủy đơn hàng này?',
+    [
+      { text: 'Không', style: 'cancel' },
+      {
+        text: 'Có',
+        onPress: () => {
+          // ⚠️ Tạm thời bỏ qua API, chỉ hiển thị thông báo và xóa khỏi danh sách
+          Alert.alert('Đã hủy đơn hàng thành công');
+
+          // Xóa order khỏi danh sách hiển thị
+          setOrders(prevOrders => prevOrders.filter(order => order.orderId !== orderId));
+        },
+      },
+    ],
+    { cancelable: true }
+  );
+};
+
 
   const renderOrder = ({ item }: any) => (
   <View style={styles.orderContainer}>
@@ -50,9 +74,10 @@ const [orders, setOrders] = useState<any[]>([]);
       <TouchableOpacity style={styles.viewButton}  onPress={() => navigation.navigate('OrderInformationScreen', { order: item })}>
         <Text style={styles.viewButtonText}>View Order</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.cancelButton}>
-        <Text style={styles.cancelButtonText}>Cancel</Text>
-      </TouchableOpacity>
+    <TouchableOpacity style={styles.cancelButton} onPress={() => handleCancelOrder(item.orderId)}>
+      <Text style={styles.cancelButtonText}>Cancel</Text>
+    </TouchableOpacity>
+
     </View>
   </View>
 );

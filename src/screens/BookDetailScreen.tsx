@@ -157,9 +157,18 @@ const BookDetailScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.buyNowButton} onPress={() => {}}>
+        <TouchableOpacity
+          style={styles.buyNowButton}
+          onPress={() => {
+            navigation.navigate('Payment', {
+              bookId: book.bookId,
+              quantity: 1,
+            });
+          }}
+        >
           <Text style={styles.buyNowText}>BUY NOW</Text>
         </TouchableOpacity>
+
       </View>
     </View>
   );

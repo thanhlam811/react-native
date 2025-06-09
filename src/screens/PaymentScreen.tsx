@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute,RouteProp } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { userApi,cartDetailsApi } from '../api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -33,7 +33,7 @@ type PaymentRouteParams = {
 
 const PaymentScreen = () => {
   const navigation = useNavigation();
-  const route = useRoute();
+  const route = useRoute<any>();
   const { selectedItems } = route.params as PaymentRouteParams;
 
   const [cartItems, setCartItems] = useState<CartItem[]>(selectedItems);
@@ -198,7 +198,8 @@ console.log('[Checkout] Body gửi lên API:', JSON.stringify(requestBody, null,
               placeholder="Phone number"
               value={phone}
               onChangeText={setPhone}
-              keyboardType="phone-pad"
+              keyboardType="numeric" // hoặc "phone-pad"
+              maxLength={10} 
             />
             <TextInput
               style={styles.input}

@@ -50,9 +50,9 @@ const [orders, setOrders] = useState<any[]>([]);
       <TouchableOpacity style={styles.viewButton}  onPress={() => navigation.navigate('OrderInformationScreen', { order: item })}>
         <Text style={styles.viewButtonText}>View Order</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.cancelButton}>
+      {/* <TouchableOpacity style={styles.cancelButton}>
         <Text style={styles.cancelButtonText}>Cancel</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   </View>
 );
